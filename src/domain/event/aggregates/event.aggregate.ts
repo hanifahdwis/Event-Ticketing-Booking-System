@@ -48,7 +48,6 @@ export class Event {
     this._domainEvents = [];
   }
 
-  // ── Factory ──────────────────────────────────────────────────────────────
 
   static create(props: CreateEventProps): Event {
     const event = new Event();
@@ -102,8 +101,6 @@ export class Event {
     return event;
   }
 
-  // ── Getters ───────────────────────────────────────────────────────────────
-
   get id(): EventId {
     return this._id;
   }
@@ -144,7 +141,6 @@ export class Event {
     return [...this._domainEvents];
   }
 
-  // ── US 2: Publish Event ───────────────────────────────────────────────────
 
   publish(): void {
     if (this._status.isCancelled()) {
@@ -178,7 +174,6 @@ export class Event {
     );
   }
 
-  // ── US 4: Add Ticket Category
 
   addTicketCategory(props: AddTicketCategoryProps): TicketCategory {
     const currentTotalQuota = this._ticketCategories
