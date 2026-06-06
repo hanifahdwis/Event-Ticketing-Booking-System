@@ -7,6 +7,5 @@ module.exports = {
   moduleFileExtensions: ['ts', 'js', 'json'],
   testPathIgnorePatterns: [
     'test/domain/refund', 
-    'test/domain/ticket',
   ],
 };

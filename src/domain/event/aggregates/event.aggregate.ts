@@ -1,7 +1,9 @@
 import { Money } from '../../shared/value-objects/money.vo';
 import { EventCreatedDomainEvent } from '../domain-events/event-created.domain-event';
 import { EventPublishedDomainEvent } from '../domain-events/event-published.domain-event';
+import { EventCancelledDomainEvent } from '../domain-events/event-cancelled.domain-event';
 import { TicketCategoryCreatedDomainEvent } from '../domain-events/ticket-category-created.domain-event';
+import { TicketCategoryDisabledDomainEvent } from '../domain-events/ticket-category-disabled.domain-event';
 import { TicketCategory } from '../entities/ticket-category.entity';
 import { Capacity } from '../value-objects/capacity.vo';
 import { EventId } from '../value-objects/event-id.vo';
@@ -48,7 +50,6 @@ export class Event {
     this._domainEvents = [];
   }
 
-
   static create(props: CreateEventProps): Event {
     const event = new Event();
     event._id = new EventId();
@@ -67,11 +68,7 @@ export class Event {
     event._status = EventStatus.draft();
 
     event._domainEvents.push(
-      new EventCreatedDomainEvent(
-        event._id,
-        props.organizerId,
-        props.name,
-      ),
+      new EventCreatedDomainEvent(event._id, props.organizerId, props.name),
     );
 
     return event;
@@ -101,46 +98,20 @@ export class Event {
     return event;
   }
 
-  get id(): EventId {
-    return this._id;
-  }
+  // ── Getters ────────────────────────────────────────────────────────────────
 
-  get organizerId(): string {
-    return this._organizerId;
-  }
+  get id(): EventId { return this._id; }
+  get organizerId(): string { return this._organizerId; }
+  get name(): EventName { return this._name; }
+  get description(): string { return this._description; }
+  get schedule(): EventSchedule { return this._schedule; }
+  get location(): Location { return this._location; }
+  get maxCapacity(): Capacity { return this._maxCapacity; }
+  get status(): EventStatus { return this._status; }
+  get ticketCategories(): TicketCategory[] { return [...this._ticketCategories]; }
+  get domainEvents(): object[] { return [...this._domainEvents]; }
 
-  get name(): EventName {
-    return this._name;
-  }
-
-  get description(): string {
-    return this._description;
-  }
-
-  get schedule(): EventSchedule {
-    return this._schedule;
-  }
-
-  get location(): Location {
-    return this._location;
-  }
-
-  get maxCapacity(): Capacity {
-    return this._maxCapacity;
-  }
-
-  get status(): EventStatus {
-    return this._status;
-  }
-
-  get ticketCategories(): TicketCategory[] {
-    return [...this._ticketCategories];
-  }
-
-  get domainEvents(): object[] {
-    return [...this._domainEvents];
-  }
-
+  // ── US 2: Publish Event ────────────────────────────────────────────────────
 
   publish(): void {
     if (this._status.isCancelled()) {
@@ -157,23 +128,45 @@ export class Event {
       );
     }
 
-    const totalQuota = this._ticketCategories
-      .filter((tc) => tc.isActive)
-      .reduce((sum, tc) => sum + tc.quota.total, 0);
-
+    const totalQuota = activeCategories.reduce(
+      (sum, tc) => sum + tc.quota.total,
+      0,
+    );
     if (this._maxCapacity.isExceededBy(totalQuota)) {
-      throw new Error(
-        'Total ticket quota exceeds the maximum event capacity',
-      );
+      throw new Error('Total ticket quota exceeds the maximum event capacity');
     }
 
     this._status = EventStatus.published();
-
     this._domainEvents.push(
       new EventPublishedDomainEvent(this._id, this._organizerId),
     );
   }
 
+  // ── US 3: Cancel Event ─────────────────────────────────────────────────────
+
+  cancel(): void {
+    if (this._status.isCompleted()) {
+      throw new Error('A Completed event cannot be cancelled');
+    }
+    if (!this._status.isPublished()) {
+      throw new Error('Only a Published event can be cancelled');
+    }
+
+    this._status = EventStatus.cancelled();
+
+    // All ticket categories can no longer be purchased (mark inactive)
+    for (const tc of this._ticketCategories) {
+      if (tc.isActive) {
+        tc.disable();
+      }
+    }
+
+    this._domainEvents.push(
+      new EventCancelledDomainEvent(this._id, this._organizerId),
+    );
+  }
+
+  // ── US 4: Add Ticket Category ──────────────────────────────────────────────
 
   addTicketCategory(props: AddTicketCategoryProps): TicketCategory {
     const currentTotalQuota = this._ticketCategories
@@ -202,16 +195,41 @@ export class Event {
     });
 
     this._ticketCategories.push(ticketCategory);
-
     this._domainEvents.push(
-      new TicketCategoryCreatedDomainEvent(
-        this._id,
-        ticketCategory.id,
-        props.name,
-      ),
+      new TicketCategoryCreatedDomainEvent(this._id, ticketCategory.id, props.name),
     );
 
     return ticketCategory;
+  }
+
+  // ── US 5: Disable Ticket Category ─────────────────────────────────────────
+
+  disableTicketCategory(ticketCategoryId: TicketCategoryId): void {
+    if (this._status.isCompleted()) {
+      throw new Error(
+        'Cannot disable a ticket category for a Completed event',
+      );
+    }
+
+    const tc = this._ticketCategories.find((t) =>
+      t.id.equals(ticketCategoryId),
+    );
+
+    if (!tc) {
+      throw new Error(
+        `Ticket category not found: ${ticketCategoryId.value}`,
+      );
+    }
+
+    if (!tc.isActive) {
+      throw new Error('Ticket category is already inactive');
+    }
+
+    tc.disable();
+
+    this._domainEvents.push(
+      new TicketCategoryDisabledDomainEvent(this._id, ticketCategoryId),
+    );
   }
 
   getLowestTicketPrice(): Money | null {

@@ -1,15 +1,13 @@
 import { Event } from '../../../src/domain/event/aggregates/event.aggregate';
 import { EventCreatedDomainEvent } from '../../../src/domain/event/domain-events/event-created.domain-event';
 import { EventPublishedDomainEvent } from '../../../src/domain/event/domain-events/event-published.domain-event';
+import { EventCancelledDomainEvent } from '../../../src/domain/event/domain-events/event-cancelled.domain-event';
 import { TicketCategoryCreatedDomainEvent } from '../../../src/domain/event/domain-events/ticket-category-created.domain-event';
+import { TicketCategoryDisabledDomainEvent } from '../../../src/domain/event/domain-events/ticket-category-disabled.domain-event';
+import { EventStatus } from '../../../src/domain/event/value-objects/event-status.vo';
+import { TicketCategoryId } from '../../../src/domain/event/value-objects/ticket-category-id.vo';
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-const tomorrow = () => {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return d;
-};
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 const dayAfter = (base: Date, days: number) => {
   const d = new Date(base);
@@ -31,7 +29,7 @@ const makeValidCreateProps = () => ({
 
 const makeValidTicketCategoryProps = (eventStartDate: Date) => ({
   name: 'Regular',
-  price: 150000,
+  price: 150_000,
   quota: 100,
   salesPeriod: {
     startDate: new Date(),
@@ -39,7 +37,16 @@ const makeValidTicketCategoryProps = (eventStartDate: Date) => ({
   },
 });
 
-// ── US 1: Create Event ───────────────────────────────────────────────────────
+const buildPublishedEvent = () => {
+  const props = makeValidCreateProps();
+  const event = Event.create(props);
+  event.addTicketCategory(makeValidTicketCategoryProps(props.schedule.startDate));
+  event.publish();
+  event.clearDomainEvents();
+  return { event, props };
+};
+
+// ── US 1: Create Event ────────────────────────────────────────────────────────
 
 describe('US 1 – Create Event', () => {
   it('should create an event with status Draft', () => {
@@ -93,9 +100,7 @@ describe('US 2 – Publish Event', () => {
   const buildDraftEventWithCategory = () => {
     const props = makeValidCreateProps();
     const event = Event.create(props);
-    event.addTicketCategory(
-      makeValidTicketCategoryProps(props.schedule.startDate),
-    );
+    event.addTicketCategory(makeValidTicketCategoryProps(props.schedule.startDate));
     event.clearDomainEvents();
     return event;
   };
@@ -127,21 +132,18 @@ describe('US 2 – Publish Event', () => {
     const event = Event.create(props);
     event.addTicketCategory({
       name: 'Regular',
-      price: 100000,
+      price: 100_000,
       quota: 50,
       salesPeriod: {
         startDate: new Date(),
         endDate: dayAfter(props.schedule.startDate, -1),
       },
     });
-    // Add second category that pushes total over capacity
-    // We disable capacity check bypass by adding exactly at boundary – then disable first
-    // Instead test with a single category that exactly fills capacity and one more
     expect(() =>
       event.addTicketCategory({
         name: 'VIP',
-        price: 300000,
-        quota: 10, // 50 + 10 = 60 > 50
+        price: 300_000,
+        quota: 10,
         salesPeriod: {
           startDate: new Date(),
           endDate: dayAfter(props.schedule.startDate, -1),
@@ -153,7 +155,6 @@ describe('US 2 – Publish Event', () => {
   });
 
   it('should throw when publishing a Cancelled event', () => {
-    const { EventStatus } = require('../../../src/domain/event/value-objects/event-status.vo');
     const props = makeValidCreateProps();
     const event = Event.create(props);
     const cancelledEvent = Event.reconstitute(
@@ -173,6 +174,76 @@ describe('US 2 – Publish Event', () => {
   });
 });
 
+// ── US 3: Cancel Event ────────────────────────────────────────────────────────
+
+describe('US 3 – Cancel Event', () => {
+  it('should cancel a Published event and change status to Cancelled', () => {
+    const { event } = buildPublishedEvent();
+    event.cancel();
+    expect(event.status.isCancelled()).toBe(true);
+  });
+
+  it('should raise exactly one EventCancelled domain event', () => {
+    const { event } = buildPublishedEvent();
+    event.cancel();
+    expect(event.domainEvents).toHaveLength(1);
+    expect(event.domainEvents[0]).toBeInstanceOf(EventCancelledDomainEvent);
+  });
+
+  it('should disable all active ticket categories when event is cancelled', () => {
+    const props = makeValidCreateProps();
+    const event = Event.create(props);
+    event.addTicketCategory(makeValidTicketCategoryProps(props.schedule.startDate));
+    event.addTicketCategory({
+      name: 'VIP',
+      price: 300_000,
+      quota: 50,
+      salesPeriod: {
+        startDate: new Date(),
+        endDate: dayAfter(props.schedule.startDate, -1),
+      },
+    });
+    event.publish();
+    event.clearDomainEvents();
+
+    event.cancel();
+
+    for (const tc of event.ticketCategories) {
+      expect(tc.isActive).toBe(false);
+    }
+  });
+
+  it('should throw when cancelling a Completed event', () => {
+    const props = makeValidCreateProps();
+    const event = Event.create(props);
+    const completedEvent = Event.reconstitute(
+      event.id,
+      event.organizerId,
+      event.name,
+      event.description,
+      event.schedule,
+      event.location,
+      event.maxCapacity,
+      EventStatus.completed(),
+      [],
+    );
+    expect(() => completedEvent.cancel()).toThrow(
+      'A Completed event cannot be cancelled',
+    );
+  });
+
+  it('should throw when cancelling a Draft event', () => {
+    const event = Event.create(makeValidCreateProps());
+    expect(() => event.cancel()).toThrow('Only a Published event can be cancelled');
+  });
+
+  it('should throw when cancelling an already Cancelled event', () => {
+    const { event } = buildPublishedEvent();
+    event.cancel();
+    expect(() => event.cancel()).toThrow('Only a Published event can be cancelled');
+  });
+});
+
 // ── US 4: Create Ticket Category ──────────────────────────────────────────────
 
 describe('US 4 – Create Ticket Category', () => {
@@ -185,20 +256,15 @@ describe('US 4 – Create Ticket Category', () => {
 
   it('should add a ticket category to the event', () => {
     const { event, props } = buildEvent();
-    event.addTicketCategory(
-      makeValidTicketCategoryProps(props.schedule.startDate),
-    );
+    event.addTicketCategory(makeValidTicketCategoryProps(props.schedule.startDate));
     expect(event.ticketCategories).toHaveLength(1);
   });
 
   it('should raise TicketCategoryCreated domain event', () => {
     const { event, props } = buildEvent();
-    event.addTicketCategory(
-      makeValidTicketCategoryProps(props.schedule.startDate),
-    );
-    const domainEvents = event.domainEvents;
-    expect(domainEvents).toHaveLength(1);
-    expect(domainEvents[0]).toBeInstanceOf(TicketCategoryCreatedDomainEvent);
+    event.addTicketCategory(makeValidTicketCategoryProps(props.schedule.startDate));
+    expect(event.domainEvents).toHaveLength(1);
+    expect(event.domainEvents[0]).toBeInstanceOf(TicketCategoryCreatedDomainEvent);
   });
 
   it('should throw when ticket price is negative', () => {
@@ -236,11 +302,11 @@ describe('US 4 – Create Ticket Category', () => {
     expect(() =>
       event.addTicketCategory({
         name: 'Regular',
-        price: 100000,
+        price: 100_000,
         quota: 100,
         salesPeriod: {
           startDate: new Date(),
-          endDate: dayAfter(props.schedule.startDate, 5), // after event start
+          endDate: dayAfter(props.schedule.startDate, 5),
         },
       }),
     ).toThrow('Sales period must end before or at the event start date');
@@ -251,22 +317,20 @@ describe('US 4 – Create Ticket Category', () => {
     props.maxCapacity = 100;
     const event = Event.create(props);
     event.clearDomainEvents();
-
     event.addTicketCategory({
       name: 'Regular',
-      price: 100000,
+      price: 100_000,
       quota: 70,
       salesPeriod: {
         startDate: new Date(),
         endDate: dayAfter(props.schedule.startDate, -1),
       },
     });
-
     expect(() =>
       event.addTicketCategory({
         name: 'VIP',
-        price: 300000,
-        quota: 50, // 70 + 50 = 120 > 100
+        price: 300_000,
+        quota: 50,
         salesPeriod: {
           startDate: new Date(),
           endDate: dayAfter(props.schedule.startDate, -1),
@@ -283,5 +347,101 @@ describe('US 4 – Create Ticket Category', () => {
       makeValidTicketCategoryProps(props.schedule.startDate),
     );
     expect(tc.isActive).toBe(true);
+  });
+});
+
+// ── US 5: Disable Ticket Category ─────────────────────────────────────────────
+
+describe('US 5 – Disable Ticket Category', () => {
+  it('should disable an active ticket category', () => {
+    const props = makeValidCreateProps();
+    const event = Event.create(props);
+    const tc = event.addTicketCategory(
+      makeValidTicketCategoryProps(props.schedule.startDate),
+    );
+    event.clearDomainEvents();
+
+    event.disableTicketCategory(tc.id);
+
+    expect(tc.isActive).toBe(false);
+  });
+
+  it('should raise exactly one TicketCategoryDisabled domain event', () => {
+    const props = makeValidCreateProps();
+    const event = Event.create(props);
+    const tc = event.addTicketCategory(
+      makeValidTicketCategoryProps(props.schedule.startDate),
+    );
+    event.clearDomainEvents();
+
+    event.disableTicketCategory(tc.id);
+
+    expect(event.domainEvents).toHaveLength(1);
+    expect(event.domainEvents[0]).toBeInstanceOf(TicketCategoryDisabledDomainEvent);
+  });
+
+  it('should preserve the ticket category in the list after disabling', () => {
+    const props = makeValidCreateProps();
+    const event = Event.create(props);
+    const tc = event.addTicketCategory(
+      makeValidTicketCategoryProps(props.schedule.startDate),
+    );
+
+    event.disableTicketCategory(tc.id);
+
+    const found = event.ticketCategories.find((t) => t.id.equals(tc.id));
+    expect(found).toBeDefined();
+    expect(found!.isActive).toBe(false);
+  });
+
+  it('should throw when ticket category id is not found', () => {
+    const { event } = buildPublishedEvent();
+    const fakeId = new TicketCategoryId();
+    expect(() => event.disableTicketCategory(fakeId)).toThrow(
+      'Ticket category not found',
+    );
+  });
+
+  it('should throw when trying to disable an already-inactive ticket category', () => {
+    const props = makeValidCreateProps();
+    const event = Event.create(props);
+    const tc = event.addTicketCategory(
+      makeValidTicketCategoryProps(props.schedule.startDate),
+    );
+    event.disableTicketCategory(tc.id);
+
+    expect(() => event.disableTicketCategory(tc.id)).toThrow(
+      'Ticket category is already inactive',
+    );
+  });
+
+  it('should throw when event is Completed', () => {
+    const props = makeValidCreateProps();
+    const event = Event.create(props);
+    const tc = event.addTicketCategory(
+      makeValidTicketCategoryProps(props.schedule.startDate),
+    );
+    const completedEvent = Event.reconstitute(
+      event.id,
+      event.organizerId,
+      event.name,
+      event.description,
+      event.schedule,
+      event.location,
+      event.maxCapacity,
+      EventStatus.completed(),
+      [...event.ticketCategories],
+    );
+
+    expect(() => completedEvent.disableTicketCategory(tc.id)).toThrow(
+      'Cannot disable a ticket category for a Completed event',
+    );
+  });
+
+  it('should be possible to disable a ticket category on a Published event', () => {
+    const { event } = buildPublishedEvent();
+    const tc = event.ticketCategories[0];
+    expect(() => event.disableTicketCategory(tc.id)).not.toThrow();
+    expect(tc.isActive).toBe(false);
   });
 });
