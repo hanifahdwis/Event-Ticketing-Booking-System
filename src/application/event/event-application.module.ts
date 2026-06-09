@@ -4,12 +4,16 @@ import { PublishEventCommandHandler } from './commands/publish-event.handler';
 import { AddTicketCategoryCommandHandler } from './commands/add-ticket-category.handler';
 import { GetEventByIdQueryHandler } from './queries/get-event-by-id.handler';
 import { GetAvailableEventsQueryHandler } from './queries/get-available-events.handler';
+import { CancelEventCommandHandler } from './commands/cancel-event.handler';
+import { DisableTicketCategoryCommandHandler } from './commands/disable-ticket-category.handler';
 
 @Module({
   providers: [
     CreateEventCommandHandler,
     PublishEventCommandHandler,
     AddTicketCategoryCommandHandler,
+    CancelEventCommandHandler,
+    DisableTicketCategoryCommandHandler,
     GetEventByIdQueryHandler,
     GetAvailableEventsQueryHandler,
   ],
@@ -17,6 +21,8 @@ import { GetAvailableEventsQueryHandler } from './queries/get-available-events.h
     CreateEventCommandHandler,
     PublishEventCommandHandler,
     AddTicketCategoryCommandHandler,
+    CancelEventCommandHandler, 
+    DisableTicketCategoryCommandHandler,
     GetEventByIdQueryHandler,
     GetAvailableEventsQueryHandler,
   ],
