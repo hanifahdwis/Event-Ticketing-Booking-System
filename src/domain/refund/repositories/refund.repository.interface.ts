@@ -5,3 +5,5 @@ export interface IRefundRepository {
   findById(id: string): Promise<Refund | null>;
   findByBookingId(bookingId: string): Promise<Refund | null>;
 }
+
+export const REFUND_REPOSITORY = Symbol('IRefundRepository');

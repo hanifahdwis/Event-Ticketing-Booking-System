@@ -40,32 +40,22 @@ export class Booking {
 
   static create(props: CreateBookingProps): Booking {
     if (!props.eventIsPublished) {
-      throw new Error(
-        'A booking can only be created for a Published event',
-      );
+      throw new Error('A booking can only be created for a Published event');
     }
     if (!props.ticketCategoryIsActive) {
-      throw new Error(
-        'A booking can only be created for an active ticket category',
-      );
+      throw new Error('A booking can only be created for an active ticket category');
     }
     if (!props.salesPeriodIsActive) {
-      throw new Error(
-        'A booking can only be created within the ticket sales period',
-      );
+      throw new Error('A booking can only be created within the ticket sales period');
     }
     if (props.customerHasActiveBookingForEvent) {
-      throw new Error(
-        'A customer cannot have more than one active booking for the same event',
-      );
+      throw new Error('A customer cannot have more than one active booking for the same event');
     }
 
     const quantity = new Quantity(props.quantity);
 
     if (props.quantity > props.remainingQuota) {
-      throw new Error(
-        'Ticket quantity exceeds the remaining ticket quota',
-      );
+      throw new Error('Ticket quantity exceeds the remaining ticket quota');
     }
 
     const booking = new Booking();
@@ -92,7 +82,6 @@ export class Booking {
         props.quantity,
       ),
     );
-
     return booking;
   }
 
@@ -130,23 +119,16 @@ export class Booking {
 
   pay(paymentAmount: Money, at: Date = new Date()): void {
     if (!this._status.isPendingPayment()) {
-      throw new Error(
-        'A booking can only be paid if its status is PendingPayment',
-      );
+      throw new Error('A booking can only be paid if its status is PendingPayment');
     }
     if (this._paymentDeadline.isExpired(at)) {
-      throw new Error(
-        'A booking cannot be paid if the payment deadline has passed',
-      );
+      throw new Error('A booking cannot be paid if the payment deadline has passed');
     }
     if (!paymentAmount.equals(this._totalPrice)) {
-      throw new Error(
-        'The payment amount must be equal to the total booking price',
-      );
+      throw new Error('The payment amount must be equal to the total booking price');
     }
 
     this._status = BookingStatus.paid();
-
     this._domainEvents.push(
       new BookingPaidDomainEvent(
         this._id,
@@ -169,7 +151,6 @@ export class Booking {
     }
 
     this._status = BookingStatus.expired();
-
     this._domainEvents.push(
       new BookingExpiredDomainEvent(
         this._id,
@@ -188,7 +169,5 @@ export class Booking {
     this._status = BookingStatus.refunded();
   }
 
-  clearDomainEvents(): void {
-    this._domainEvents = [];
-  }
+  clearDomainEvents(): void { this._domainEvents = []; }
 }

@@ -38,17 +38,14 @@ async function main() {
   await repo.save(event);
   console.log('US4: Ticket category added');
 
-  // US2: Publish Event
   event.publish();
   await repo.save(event);
   console.log('US2: Event published, status =', event.status.value);
 
-  // Verify read-back
   const found = await repo.findById(event.id);
   console.log('FindById: event name =', found?.name.value, '| status =', found?.status.value);
   console.log('Ticket categories count:', found?.ticketCategories.length);
 
-  // Verify findAllPublished
   const published = await repo.findAllPublished();
   console.log('FindAllPublished count:', published.length);
 

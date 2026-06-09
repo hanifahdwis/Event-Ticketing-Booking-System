@@ -2,11 +2,17 @@ import { Module } from '@nestjs/common';
 import { Pool } from 'pg';
 
 import { EVENT_REPOSITORY } from '../domain/event/repositories/event.repository.interface';
+import { BOOKING_REPOSITORY } from '../domain/booking/repositories/booking.repository.interface';
+import { TICKET_REPOSITORY } from '../domain/ticket/repositories/ticket.repository.interface';
+import { REFUND_REPOSITORY } from '../domain/refund/repositories/refund.repository.interface';
 import { NOTIFICATION_SERVICE } from '../application/common/interfaces/notification-service.interface';
 
 import { EventRepository, DB_POOL } from './event/repositories/event.repository';
+import { BookingRepository } from './booking/repositories/booking.repository';
+import { TicketRepository } from './ticket/repositories/ticket.repository';
 import { NotificationService } from './services/notification.service';
 import { databaseConfig } from './database/database.config';
+import { RefundRepository } from './refund/repositories/refund.repository';
 
 const dbPoolProvider = {
   provide: DB_POOL,
@@ -18,6 +24,21 @@ const eventRepositoryProvider = {
   useClass: EventRepository,
 };
 
+const bookingRepositoryProvider = {
+  provide: BOOKING_REPOSITORY,
+  useClass: BookingRepository,
+};
+
+const ticketRepositoryProvider = {
+  provide: TICKET_REPOSITORY,
+  useClass: TicketRepository,
+};
+
+const refundRepositoryProvider = {
+  provide: REFUND_REPOSITORY,
+  useClass: RefundRepository,
+};
+
 const notificationServiceProvider = {
   provide: NOTIFICATION_SERVICE,
   useClass: NotificationService,
@@ -27,11 +48,17 @@ const notificationServiceProvider = {
   providers: [
     dbPoolProvider,
     eventRepositoryProvider,
+    bookingRepositoryProvider,
+    ticketRepositoryProvider,
+    refundRepositoryProvider,
     notificationServiceProvider,
   ],
   exports: [
     DB_POOL,
     EVENT_REPOSITORY,
+    BOOKING_REPOSITORY,
+    TICKET_REPOSITORY,
+    REFUND_REPOSITORY,
     NOTIFICATION_SERVICE,
   ],
 })

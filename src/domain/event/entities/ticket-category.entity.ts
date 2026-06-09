@@ -30,29 +30,12 @@ export class TicketCategory {
     this._isActive = props.isActive;
   }
 
-  get id(): TicketCategoryId {
-    return this._id;
-  }
-
-  get name(): TicketCategoryName {
-    return this._name;
-  }
-
-  get price(): Money {
-    return this._price;
-  }
-
-  get quota(): Quota {
-    return this._quota;
-  }
-
-  get salesPeriod(): SalesPeriod {
-    return this._salesPeriod;
-  }
-
-  get isActive(): boolean {
-    return this._isActive;
-  }
+  get id(): TicketCategoryId { return this._id; }
+  get name(): TicketCategoryName { return this._name; }
+  get price(): Money { return this._price; }
+  get quota(): Quota { return this._quota; }
+  get salesPeriod(): SalesPeriod { return this._salesPeriod; }
+  get isActive(): boolean { return this._isActive; }
 
   disable(): void {
     this._isActive = false;
@@ -69,9 +52,7 @@ export class TicketCategory {
     this._quota = this._quota.release(amount);
   }
 
-  isSoldOut(): boolean {
-    return this._quota.isSoldOut();
-  }
+  isSoldOut(): boolean { return this._quota.isSoldOut(); }
 
   isAvailableAt(date: Date = new Date()): boolean {
     return this._isActive && this._salesPeriod.isActive(date);

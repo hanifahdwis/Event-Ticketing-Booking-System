@@ -6,7 +6,7 @@ import { EventId } from '../../event/value-objects/event-id.vo';
 import { TicketCategoryId } from '../../event/value-objects/ticket-category-id.vo';
 import { BookingId } from '../../booking/value-objects/booking-id.vo';
 
-export interface CreateTicketProps {
+export interface IssueTicketProps {
   bookingId: BookingId;
   customerId: string;
   eventId: EventId;
@@ -34,7 +34,7 @@ export class Ticket {
     this._domainEvents = [];
   }
 
-  static issue(props: CreateTicketProps): Ticket {
+  static issue(props: IssueTicketProps): Ticket {
     const ticket = new Ticket();
     ticket._id = new TicketId();
     ticket._bookingId = props.bookingId;
@@ -81,19 +81,15 @@ export class Ticket {
     if (props.eventIsCancelled) {
       throw new Error('The event has been cancelled');
     }
-
     if (!this._eventId.equals(props.checkedInForEventId)) {
       throw new Error('The ticket does not match the event');
     }
-
     if (this._status.isCheckedIn()) {
       throw new Error('The ticket has already been used');
     }
-
     if (!this._status.isActive()) {
       throw new Error('Check-in can only be performed for a ticket with status Active');
     }
-
     if (!props.isWithinCheckInWindow) {
       throw new Error(
         'Check-in can only be performed on the event day or within the allowed check-in time window',
@@ -101,7 +97,6 @@ export class Ticket {
     }
 
     this._status = TicketStatus.checkedIn();
-
     this._domainEvents.push(
       new TicketCheckedInDomainEvent(
         this._id,
@@ -130,7 +125,5 @@ export class Ticket {
     this._status = TicketStatus.refundRequired();
   }
 
-  clearDomainEvents(): void {
-    this._domainEvents = [];
-  }
+  clearDomainEvents(): void { this._domainEvents = []; }
 }

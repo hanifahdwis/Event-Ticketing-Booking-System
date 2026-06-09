@@ -56,21 +56,14 @@ export class Event {
     event._organizerId = props.organizerId;
     event._name = new EventName(props.name);
     event._description = props.description;
-    event._schedule = new EventSchedule(
-      props.schedule.startDate,
-      props.schedule.endDate,
-    );
-    event._location = new Location(
-      props.location.address,
-      props.location.city,
-    );
+    event._schedule = new EventSchedule(props.schedule.startDate, props.schedule.endDate);
+    event._location = new Location(props.location.address, props.location.city);
     event._maxCapacity = new Capacity(props.maxCapacity);
     event._status = EventStatus.draft();
 
     event._domainEvents.push(
       new EventCreatedDomainEvent(event._id, props.organizerId, props.name),
     );
-
     return event;
   }
 
@@ -119,23 +112,16 @@ export class Event {
 
     const activeCategories = this._ticketCategories.filter((tc) => tc.isActive);
     if (activeCategories.length === 0) {
-      throw new Error(
-        'Event cannot be published without at least one active ticket category',
-      );
+      throw new Error('Event cannot be published without at least one active ticket category');
     }
 
-    const totalQuota = activeCategories.reduce(
-      (sum, tc) => sum + tc.quota.total,
-      0,
-    );
+    const totalQuota = activeCategories.reduce((sum, tc) => sum + tc.quota.total, 0);
     if (this._maxCapacity.isExceededBy(totalQuota)) {
       throw new Error('Total ticket quota exceeds the maximum event capacity');
     }
 
     this._status = EventStatus.published();
-    this._domainEvents.push(
-      new EventPublishedDomainEvent(this._id, this._organizerId),
-    );
+    this._domainEvents.push(new EventPublishedDomainEvent(this._id, this._organizerId));
   }
 
   cancel(): void {
@@ -154,9 +140,7 @@ export class Event {
       }
     }
 
-    this._domainEvents.push(
-      new EventCancelledDomainEvent(this._id, this._organizerId),
-    );
+    this._domainEvents.push(new EventCancelledDomainEvent(this._id, this._organizerId));
   }
 
   addTicketCategory(props: AddTicketCategoryProps): TicketCategory {
@@ -189,36 +173,42 @@ export class Event {
     this._domainEvents.push(
       new TicketCategoryCreatedDomainEvent(this._id, ticketCategory.id, props.name),
     );
-
     return ticketCategory;
   }
 
   disableTicketCategory(ticketCategoryId: TicketCategoryId): void {
     if (this._status.isCompleted()) {
-      throw new Error(
-        'Cannot disable a ticket category for a Completed event',
-      );
+      throw new Error('Cannot disable a ticket category for a Completed event');
     }
 
-    const tc = this._ticketCategories.find((t) =>
-      t.id.equals(ticketCategoryId),
-    );
-
+    const tc = this._ticketCategories.find((t) => t.id.equals(ticketCategoryId));
     if (!tc) {
-      throw new Error(
-        `Ticket category not found: ${ticketCategoryId.value}`,
-      );
+      throw new Error(`Ticket category not found: ${ticketCategoryId.value}`);
     }
-
     if (!tc.isActive) {
       throw new Error('Ticket category is already inactive');
     }
 
     tc.disable();
-
     this._domainEvents.push(
       new TicketCategoryDisabledDomainEvent(this._id, ticketCategoryId),
     );
+  }
+
+  reserveTicketCategoryQuota(ticketCategoryId: TicketCategoryId, amount: number): void {
+    const tc = this._ticketCategories.find((t) => t.id.equals(ticketCategoryId));
+    if (!tc) {
+      throw new Error(`Ticket category not found: ${ticketCategoryId.value}`);
+    }
+    tc.reserveQuota(amount);
+  }
+
+  releaseTicketCategoryQuota(ticketCategoryId: TicketCategoryId, amount: number): void {
+    const tc = this._ticketCategories.find((t) => t.id.equals(ticketCategoryId));
+    if (!tc) {
+      throw new Error(`Ticket category not found: ${ticketCategoryId.value}`);
+    }
+    tc.releaseQuota(amount);
   }
 
   getLowestTicketPrice(): Money | null {
@@ -229,7 +219,9 @@ export class Event {
     ).price;
   }
 
-  clearDomainEvents(): void {
-    this._domainEvents = [];
+  getTicketCategory(ticketCategoryId: TicketCategoryId): TicketCategory | null {
+    return this._ticketCategories.find((tc) => tc.id.equals(ticketCategoryId)) ?? null;
   }
+
+  clearDomainEvents(): void { this._domainEvents = []; }
 }
