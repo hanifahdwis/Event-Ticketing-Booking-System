@@ -75,7 +75,7 @@ export class Booking {
     booking._ticketCategoryId = new TicketCategoryId(props.ticketCategoryId);
     booking._quantity = quantity;
     booking._status = BookingStatus.pendingPayment();
-    booking._paymentDeadline = new PaymentDeadline(); 
+    booking._paymentDeadline = new PaymentDeadline();
 
     let total = props.unitPrice.multiply(props.quantity);
     if (props.serviceFee) {
@@ -176,9 +176,16 @@ export class Booking {
         this._customerId,
         this._eventId,
         this._ticketCategoryId,
-        this._quantity.value, 
+        this._quantity.value,
       ),
     );
+  }
+
+  markAsRefunded(): void {
+    if (!this._status.isPaid()) {
+      throw new Error('Only a Paid booking can be marked as Refunded');
+    }
+    this._status = BookingStatus.refunded();
   }
 
   clearDomainEvents(): void {

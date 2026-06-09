@@ -5,7 +5,7 @@ export class RefundId {
 
   private constructor(value: string) {
     if (!value || !this.isValidUUID(value)) {
-      throw new Error('Format RefundId tidak valid. Harus berupa UUID.');
+      throw new Error('Invalid RefundId format. Must be a UUID.');
     }
     this._value = value;
   }

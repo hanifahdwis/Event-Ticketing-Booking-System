@@ -7,13 +7,10 @@ import { EventId } from '../../../src/domain/event/value-objects/event-id.vo';
 import { TicketCategoryId } from '../../../src/domain/event/value-objects/ticket-category-id.vo';
 import { BookingId } from '../../../src/domain/booking/value-objects/booking-id.vo';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 const makeEventId = () => new EventId();
 const makeBookingId = () => new BookingId();
 const makeCategoryId = () => new TicketCategoryId();
 
-/** Build a valid Active ticket for a given eventId */
 const buildActiveTicket = (eventId: EventId) =>
   Ticket.issue({
     bookingId: makeBookingId(),
@@ -22,15 +19,12 @@ const buildActiveTicket = (eventId: EventId) =>
     ticketCategoryId: makeCategoryId(),
   });
 
-/** Default valid check-in props (same event, not cancelled, within window) */
 const validCheckIn = (eventId: EventId) => ({
   checkedInForEventId: eventId,
   eventIsCancelled: false,
   isWithinCheckInWindow: true,
   checkedInAt: new Date(),
 });
-
-// ── US 13: Check In Ticket ─────────────────────────────────────────────────────
 
 describe('US 13 – Check In Ticket', () => {
   it('should change ticket status to CheckedIn on valid check-in', () => {
@@ -86,8 +80,6 @@ describe('US 13 – Check In Ticket', () => {
   });
 });
 
-// ── US 14: Reject Invalid Ticket Check-in ─────────────────────────────────────
-
 describe('US 14 – Reject Invalid Ticket Check-in', () => {
   it('should throw when ticket has already been checked in', () => {
     const eventId = makeEventId();
@@ -127,7 +119,7 @@ describe('US 14 – Reject Invalid Ticket Check-in', () => {
       ticket.checkIn(validCheckIn(eventId));
     } catch (_) {}
 
-    expect(ticket.status.isCheckedIn()).toBe(true); // unchanged
+    expect(ticket.status.isCheckedIn()).toBe(true);
   });
 
   it('should not change ticket status when check-in fails due to wrong event', () => {
@@ -139,7 +131,7 @@ describe('US 14 – Reject Invalid Ticket Check-in', () => {
       ticket.checkIn({ ...validCheckIn(wrongEventId), checkedInForEventId: wrongEventId });
     } catch (_) {}
 
-    expect(ticket.status.isActive()).toBe(true); // unchanged
+    expect(ticket.status.isActive()).toBe(true);
   });
 
   it('should not change ticket status when check-in fails due to cancelled event', () => {
@@ -150,7 +142,7 @@ describe('US 14 – Reject Invalid Ticket Check-in', () => {
       ticket.checkIn({ ...validCheckIn(eventId), eventIsCancelled: true });
     } catch (_) {}
 
-    expect(ticket.status.isActive()).toBe(true); // unchanged
+    expect(ticket.status.isActive()).toBe(true);
   });
 
   it('should not raise any domain event when check-in fails', () => {
@@ -165,7 +157,36 @@ describe('US 14 – Reject Invalid Ticket Check-in', () => {
   });
 });
 
-// ── Ticket.issue() & Ticket.reconstitute() ─────────────────────────────────────
+describe('US 12 – Ticket RefundRequired Status', () => {
+  it('should mark an Active ticket as RefundRequired', () => {
+    const eventId = makeEventId();
+    const ticket = buildActiveTicket(eventId);
+
+    ticket.markAsRefundRequired();
+
+    expect(ticket.status.isRefundRequired()).toBe(true);
+  });
+
+  it('should throw when trying to mark a CheckedIn ticket as RefundRequired', () => {
+    const eventId = makeEventId();
+    const ticket = buildActiveTicket(eventId);
+    ticket.checkIn(validCheckIn(eventId));
+
+    expect(() => ticket.markAsRefundRequired()).toThrow(
+      'A checked-in ticket cannot be marked as refund required',
+    );
+  });
+
+  it('should throw when trying to mark a Cancelled ticket as RefundRequired', () => {
+    const eventId = makeEventId();
+    const ticket = buildActiveTicket(eventId);
+    ticket.cancel();
+
+    expect(() => ticket.markAsRefundRequired()).toThrow(
+      'Only an Active ticket can be marked as refund required',
+    );
+  });
+});
 
 describe('Ticket – issue() and reconstitute()', () => {
   it('should issue a ticket with status Active', () => {
@@ -205,8 +226,6 @@ describe('Ticket – issue() and reconstitute()', () => {
     expect(ticket.domainEvents).toHaveLength(0);
   });
 });
-
-// ── Ticket.cancel() ────────────────────────────────────────────────────────────
 
 describe('Ticket – cancel()', () => {
   it('should cancel an Active ticket', () => {

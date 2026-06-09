@@ -2,6 +2,7 @@ export enum TicketStatusEnum {
   ACTIVE = 'Active',
   CHECKED_IN = 'CheckedIn',
   CANCELLED = 'Cancelled',
+  REFUND_REQUIRED = 'RefundRequired',
 }
 
 export class TicketStatus {
@@ -23,6 +24,10 @@ export class TicketStatus {
     return new TicketStatus(TicketStatusEnum.CANCELLED);
   }
 
+  static refundRequired(): TicketStatus {
+    return new TicketStatus(TicketStatusEnum.REFUND_REQUIRED);
+  }
+
   get value(): TicketStatusEnum {
     return this._value;
   }
@@ -37,6 +42,10 @@ export class TicketStatus {
 
   isCancelled(): boolean {
     return this._value === TicketStatusEnum.CANCELLED;
+  }
+
+  isRefundRequired(): boolean {
+    return this._value === TicketStatusEnum.REFUND_REQUIRED;
   }
 
   equals(other: TicketStatus): boolean {
