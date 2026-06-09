@@ -6,7 +6,12 @@ import { RefundRequestedDomainEvent } from '../domain-events/refund-requested.do
 import { RefundApprovedDomainEvent } from '../domain-events/refund-approved.domain-event';
 import { RefundRejectedDomainEvent } from '../domain-events/refund-rejected.domain-event';
 import { RefundPaidOutDomainEvent } from '../domain-events/refund-paid-out.domain-event';
-import { RefundEligibilityDomainService, IBookingRef, ITicketRef, IEventRef } from '../services/refund-eligibility.domain-service';
+import {
+  RefundEligibilityDomainService,
+  IBookingRef,
+  ITicketRef,
+  IEventRef,
+} from '../services/refund-eligibility.domain-service';
 import { Money } from '../../shared/value-objects/money.vo';
 
 export class Refund {
@@ -26,7 +31,7 @@ export class Refund {
     customerId: string,
     amount: Money,
     status: RefundStatus,
-    createdAt: Date
+    createdAt: Date,
   ) {
     this._id = id;
     this._bookingId = bookingId;
@@ -44,10 +49,10 @@ export class Refund {
     customerId: string,
     amount: Money,
     eligibilityService: RefundEligibilityDomainService,
-    currentDate: Date
+    currentDate: Date,
   ): Refund {
     if (!eligibilityService.isEligible(booking, tickets, event, currentDate)) {
-      throw new Error('Booking tidak memenuhi syarat untuk direfund.');
+      throw new Error('Booking does not meet the requirements for a refund');
     }
 
     const refund = new Refund(
@@ -56,7 +61,7 @@ export class Refund {
       customerId,
       amount,
       RefundStatus.Requested,
-      currentDate
+      currentDate,
     );
 
     refund.addDomainEvent(
@@ -64,8 +69,8 @@ export class Refund {
         id.getValue(),
         booking.id,
         customerId,
-        amount.amount
-      )
+        amount.amount,
+      ),
     );
 
     return refund;
@@ -73,19 +78,23 @@ export class Refund {
 
   public approve(): void {
     if (this._status !== RefundStatus.Requested) {
-      throw new Error('Refund hanya dapat disetujui jika statusnya Requested.');
+      throw new Error(
+        'A refund can only be approved if its status is Requested',
+      );
     }
 
     this._status = RefundStatus.Approved;
 
     this.addDomainEvent(
-      new RefundApprovedDomainEvent(this._id.getValue(), this._bookingId)
+      new RefundApprovedDomainEvent(this._id.getValue(), this._bookingId),
     );
   }
 
   public reject(reason: RejectionReason): void {
     if (this._status !== RefundStatus.Requested) {
-      throw new Error('Refund hanya dapat ditolak jika statusnya Requested.');
+      throw new Error(
+        'A refund can only be rejected if its status is Requested',
+      );
     }
 
     this._status = RefundStatus.Rejected;
@@ -95,14 +104,16 @@ export class Refund {
       new RefundRejectedDomainEvent(
         this._id.getValue(),
         this._bookingId,
-        reason.getValue()
-      )
+        reason.getValue(),
+      ),
     );
   }
 
   public markAsPaidOut(paymentReference: PaymentReference): void {
     if (this._status !== RefundStatus.Approved) {
-      throw new Error('Refund hanya dapat ditandai sebagai PaidOut jika statusnya Approved.');
+      throw new Error(
+        'A refund can only be marked as paid out if its status is Approved',
+      );
     }
 
     this._status = RefundStatus.PaidOut;
@@ -112,8 +123,8 @@ export class Refund {
       new RefundPaidOutDomainEvent(
         this._id.getValue(),
         this._bookingId,
-        paymentReference.getValue()
-      )
+        paymentReference.getValue(),
+      ),
     );
   }
 
@@ -124,6 +135,7 @@ export class Refund {
   public get status(): RefundStatus { return this._status; }
   public get rejectionReason(): RejectionReason | undefined { return this._rejectionReason; }
   public get paymentReference(): PaymentReference | undefined { return this._paymentReference; }
+  public get createdAt(): Date { return this._createdAt; }
   public get domainEvents(): unknown[] { return [...this._domainEvents]; }
 
   private addDomainEvent(event: unknown): void {

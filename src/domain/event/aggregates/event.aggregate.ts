@@ -98,8 +98,6 @@ export class Event {
     return event;
   }
 
-  // ── Getters ────────────────────────────────────────────────────────────────
-
   get id(): EventId { return this._id; }
   get organizerId(): string { return this._organizerId; }
   get name(): EventName { return this._name; }
@@ -110,8 +108,6 @@ export class Event {
   get status(): EventStatus { return this._status; }
   get ticketCategories(): TicketCategory[] { return [...this._ticketCategories]; }
   get domainEvents(): object[] { return [...this._domainEvents]; }
-
-  // ── US 2: Publish Event ────────────────────────────────────────────────────
 
   publish(): void {
     if (this._status.isCancelled()) {
@@ -142,8 +138,6 @@ export class Event {
     );
   }
 
-  // ── US 3: Cancel Event ─────────────────────────────────────────────────────
-
   cancel(): void {
     if (this._status.isCompleted()) {
       throw new Error('A Completed event cannot be cancelled');
@@ -154,7 +148,6 @@ export class Event {
 
     this._status = EventStatus.cancelled();
 
-    // All ticket categories can no longer be purchased (mark inactive)
     for (const tc of this._ticketCategories) {
       if (tc.isActive) {
         tc.disable();
@@ -165,8 +158,6 @@ export class Event {
       new EventCancelledDomainEvent(this._id, this._organizerId),
     );
   }
-
-  // ── US 4: Add Ticket Category ──────────────────────────────────────────────
 
   addTicketCategory(props: AddTicketCategoryProps): TicketCategory {
     const currentTotalQuota = this._ticketCategories
@@ -201,8 +192,6 @@ export class Event {
 
     return ticketCategory;
   }
-
-  // ── US 5: Disable Ticket Category ─────────────────────────────────────────
 
   disableTicketCategory(ticketCategoryId: TicketCategoryId): void {
     if (this._status.isCompleted()) {

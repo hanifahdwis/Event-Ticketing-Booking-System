@@ -14,11 +14,8 @@ export interface CreateTicketProps {
 }
 
 export interface CheckInProps {
-  /** The event ID that the gate officer is checking in for */
   checkedInForEventId: EventId;
-  /** Whether the event is currently cancelled */
   eventIsCancelled: boolean;
-  /** Whether today is within the allowed check-in time window */
   isWithinCheckInWindow: boolean;
   checkedInAt?: Date;
 }
@@ -37,8 +34,6 @@ export class Ticket {
     this._domainEvents = [];
   }
 
-  // ── Factory: called after BookingPaid ──────────────────────────────────────
-
   static issue(props: CreateTicketProps): Ticket {
     const ticket = new Ticket();
     ticket._id = new TicketId();
@@ -46,7 +41,7 @@ export class Ticket {
     ticket._customerId = props.customerId;
     ticket._eventId = props.eventId;
     ticket._ticketCategoryId = props.ticketCategoryId;
-    ticket._code = new TicketCode();         // unique code generated here
+    ticket._code = new TicketCode();
     ticket._status = TicketStatus.active();
     return ticket;
   }
@@ -71,8 +66,6 @@ export class Ticket {
     return ticket;
   }
 
-  // ── Getters ────────────────────────────────────────────────────────────────
-
   get id(): TicketId { return this._id; }
   get bookingId(): BookingId { return this._bookingId; }
   get customerId(): string { return this._customerId; }
@@ -82,32 +75,25 @@ export class Ticket {
   get status(): TicketStatus { return this._status; }
   get domainEvents(): object[] { return [...this._domainEvents]; }
 
-  // ── US 13: Check In Ticket ─────────────────────────────────────────────────
-
   checkIn(props: CheckInProps): void {
     const checkedInAt = props.checkedInAt ?? new Date();
 
-    // US 14: reject if event is cancelled
     if (props.eventIsCancelled) {
       throw new Error('The event has been cancelled');
     }
 
-    // US 14: reject if ticket belongs to a different event
     if (!this._eventId.equals(props.checkedInForEventId)) {
       throw new Error('The ticket does not match the event');
     }
 
-    // US 14: reject if ticket has already been checked in
     if (this._status.isCheckedIn()) {
       throw new Error('The ticket has already been used');
     }
 
-    // US 13: ticket must be Active
     if (!this._status.isActive()) {
       throw new Error('Check-in can only be performed for a ticket with status Active');
     }
 
-    // US 13: check-in only allowed within the allowed time window
     if (!props.isWithinCheckInWindow) {
       throw new Error(
         'Check-in can only be performed on the event day or within the allowed check-in time window',
@@ -127,13 +113,21 @@ export class Ticket {
     );
   }
 
-  // ── Cancel (used by Refund approval / Event cancellation) ─────────────────
-
   cancel(): void {
     if (this._status.isCheckedIn()) {
       throw new Error('A checked-in ticket cannot be cancelled');
     }
     this._status = TicketStatus.cancelled();
+  }
+
+  markAsRefundRequired(): void {
+    if (this._status.isCheckedIn()) {
+      throw new Error('A checked-in ticket cannot be marked as refund required');
+    }
+    if (!this._status.isActive()) {
+      throw new Error('Only an Active ticket can be marked as refund required');
+    }
+    this._status = TicketStatus.refundRequired();
   }
 
   clearDomainEvents(): void {

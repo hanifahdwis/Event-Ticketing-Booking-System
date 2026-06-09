@@ -3,7 +3,7 @@ export class RejectionReason {
 
   private constructor(value: string) {
     if (!value || value.trim().length === 0) {
-      throw new Error('Rejection reason tidak boleh kosong');
+      throw new Error('Rejection reason cannot be empty');
     }
     this._value = value;
   }

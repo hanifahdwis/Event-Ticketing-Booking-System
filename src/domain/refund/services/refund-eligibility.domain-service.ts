@@ -17,14 +17,16 @@ export class RefundEligibilityDomainService {
     booking: IBookingRef,
     tickets: ITicketRef[],
     event: IEventRef,
-    currentDate: Date
+    currentDate: Date,
   ): boolean {
     if (booking.status !== 'Paid') {
       return false;
     }
 
-    const hasCheckedInTickets = tickets.some(ticket => ticket.status === 'CheckedIn');
-    if (hasCheckedInTickets) {
+    const hasCheckedInTicket = tickets.some(
+      (ticket) => ticket.status === 'CheckedIn',
+    );
+    if (hasCheckedInTicket) {
       return false;
     }
 
