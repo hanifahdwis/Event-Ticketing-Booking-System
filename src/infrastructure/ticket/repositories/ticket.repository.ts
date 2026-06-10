@@ -1,9 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Pool } from 'pg';
 
-import {
-  ITicketRepository,
-} from '../../../domain/ticket/repositories/ticket.repository.interface';
+import {ITicketRepository} from '../../../domain/ticket/repositories/ticket.repository.interface';
 import { Ticket } from '../../../domain/ticket/aggregates/ticket.aggregate';
 import { TicketId } from '../../../domain/ticket/value-objects/ticket-id.vo';
 import { TicketCode } from '../../../domain/ticket/value-objects/ticket-code.vo';
@@ -54,6 +52,19 @@ export class TicketRepository implements ITicketRepository {
       const result = await client.query(
         'SELECT * FROM tickets WHERE booking_id = $1',
         [bookingId.value],
+      );
+      return result.rows.map((row) => this.mapRowToTicket(row));
+    } finally {
+      client.release();
+    }
+  }
+
+  async findByEventId(eventId: EventId): Promise<Ticket[]> {
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        'SELECT * FROM tickets WHERE event_id = $1',
+        [eventId.value],
       );
       return result.rows.map((row) => this.mapRowToTicket(row));
     } finally {

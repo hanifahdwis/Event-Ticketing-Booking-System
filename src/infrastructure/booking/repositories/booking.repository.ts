@@ -1,9 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Pool } from 'pg';
 
-import {
-  IBookingRepository,
-} from '../../../domain/booking/repositories/booking.repository.interface';
+import {IBookingRepository} from '../../../domain/booking/repositories/booking.repository.interface';
 import { Booking } from '../../../domain/booking/aggregates/booking.aggregate';
 import { BookingId } from '../../../domain/booking/value-objects/booking-id.vo';
 import {
@@ -64,6 +62,34 @@ export class BookingRepository implements IBookingRepository {
          WHERE status = 'PendingPayment'
            AND payment_deadline < $1`,
         [at],
+      );
+      return result.rows.map((row) => this.mapRowToBooking(row));
+    } finally {
+      client.release();
+    }
+  }
+
+  async findAllPaidByEventId(eventId: string): Promise<Booking[]> {
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        `SELECT * FROM bookings
+         WHERE event_id = $1
+           AND status = 'Paid'`,
+        [eventId],
+      );
+      return result.rows.map((row) => this.mapRowToBooking(row));
+    } finally {
+      client.release();
+    }
+  }
+
+  async findAllByEventId(eventId: string): Promise<Booking[]> {
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        `SELECT * FROM bookings WHERE event_id = $1`,
+        [eventId],
       );
       return result.rows.map((row) => this.mapRowToBooking(row));
     } finally {

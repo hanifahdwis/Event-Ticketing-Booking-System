@@ -6,6 +6,8 @@ import { BOOKING_REPOSITORY } from '../domain/booking/repositories/booking.repos
 import { TICKET_REPOSITORY } from '../domain/ticket/repositories/ticket.repository.interface';
 import { REFUND_REPOSITORY } from '../domain/refund/repositories/refund.repository.interface';
 import { NOTIFICATION_SERVICE } from '../application/common/interfaces/notification-service.interface';
+import { PAYMENT_GATEWAY } from '../application/common/interfaces/payment-gateway.interface';
+import { REFUND_PAYMENT_SERVICE } from '../application/common/interfaces/refund-payment-service.interface';
 
 import { EventRepository, DB_POOL } from './event/repositories/event.repository';
 import { BookingRepository } from './booking/repositories/booking.repository';
@@ -13,6 +15,8 @@ import { TicketRepository } from './ticket/repositories/ticket.repository';
 import { NotificationService } from './services/notification.service';
 import { databaseConfig } from './database/database.config';
 import { RefundRepository } from './refund/repositories/refund.repository';
+import { PaymentGatewayService } from './services/payment-gateway.service';
+import { RefundPaymentService } from './services/refund-payment.service';
 
 const dbPoolProvider = {
   provide: DB_POOL,
@@ -44,6 +48,16 @@ const notificationServiceProvider = {
   useClass: NotificationService,
 };
 
+const paymentGatewayProvider = {
+  provide: PAYMENT_GATEWAY,
+  useClass: PaymentGatewayService,
+};
+
+const refundPaymentServiceProvider = {
+  provide: REFUND_PAYMENT_SERVICE,
+  useClass: RefundPaymentService,
+};
+
 @Module({
   providers: [
     dbPoolProvider,
@@ -52,6 +66,8 @@ const notificationServiceProvider = {
     ticketRepositoryProvider,
     refundRepositoryProvider,
     notificationServiceProvider,
+    paymentGatewayProvider,
+    refundPaymentServiceProvider,
   ],
   exports: [
     DB_POOL,
@@ -60,6 +76,8 @@ const notificationServiceProvider = {
     TICKET_REPOSITORY,
     REFUND_REPOSITORY,
     NOTIFICATION_SERVICE,
+    PAYMENT_GATEWAY,
+    REFUND_PAYMENT_SERVICE,
   ],
 })
 export class InfrastructureModule {}
