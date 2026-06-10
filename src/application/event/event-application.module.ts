@@ -6,8 +6,10 @@ import { GetEventByIdQueryHandler } from './queries/get-event-by-id.handler';
 import { GetAvailableEventsQueryHandler } from './queries/get-available-events.handler';
 import { CancelEventCommandHandler } from './commands/cancel-event.handler';
 import { DisableTicketCategoryCommandHandler } from './commands/disable-ticket-category.handler';
+import { InfrastructureModule } from '../../infrastructure/infrastructure.module';
 
 @Module({
+  imports: [InfrastructureModule],
   providers: [
     CreateEventCommandHandler,
     PublishEventCommandHandler,

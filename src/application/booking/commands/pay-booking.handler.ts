@@ -14,6 +14,10 @@ import {
   ITicketRepository,
   TICKET_REPOSITORY,
 } from '../../../domain/ticket/repositories/ticket.repository.interface';
+import {
+  INotificationService,
+  NOTIFICATION_SERVICE,
+} from '../../common/interfaces/notification-service.interface';
 import { BookingId } from '../../../domain/booking/value-objects/booking-id.vo';
 import { Money } from '../../../domain/shared/value-objects/money.vo';
 import { Ticket } from '../../../domain/ticket/aggregates/ticket.aggregate';
@@ -26,6 +30,9 @@ export class PayBookingCommandHandler {
 
     @Inject(TICKET_REPOSITORY)
     private readonly ticketRepository: ITicketRepository,
+
+    @Inject(NOTIFICATION_SERVICE)
+    private readonly notificationService: INotificationService,
   ) {}
 
   async execute(command: PayBookingCommand): Promise<PayBookingResponseDto> {
@@ -42,9 +49,7 @@ export class PayBookingCommandHandler {
 
     const paymentAmount = new Money(command.paymentAmount, command.currency);
     booking.pay(paymentAmount);
-
     await this.bookingRepository.save(booking);
-
     const tickets = Array.from({ length: booking.quantity.value }, () =>
       Ticket.issue({
         bookingId: booking.id,
@@ -54,6 +59,12 @@ export class PayBookingCommandHandler {
       }),
     );
     await this.ticketRepository.saveAll(tickets);
+
+    await this.notificationService.sendBookingConfirmationNotification(
+      booking.customerId,
+      booking.id.value,
+      booking.eventId.value,
+    );
 
     const dto = new PayBookingResponseDto();
     dto.bookingId = booking.id.value;

@@ -5,14 +5,20 @@ import {
   IBookingRepository,
   BOOKING_REPOSITORY,
 } from '../../../domain/booking/repositories/booking.repository.interface';
+import {
+  IEventRepository,
+  EVENT_REPOSITORY,
+} from '../../../domain/event/repositories/event.repository.interface';
 import { BookingId } from '../../../domain/booking/value-objects/booking-id.vo';
-
 
 @Injectable()
 export class ExpireBookingCommandHandler {
   constructor(
     @Inject(BOOKING_REPOSITORY)
     private readonly bookingRepository: IBookingRepository,
+
+    @Inject(EVENT_REPOSITORY)
+    private readonly eventRepository: IEventRepository,
   ) {}
 
   async execute(command: ExpireBookingCommand): Promise<ExpireBookingResponseDto> {
@@ -23,9 +29,13 @@ export class ExpireBookingCommandHandler {
       throw new NotFoundException(`Booking not found: ${command.bookingId}`);
     }
 
-    
     booking.expire();
     await this.bookingRepository.save(booking);
+    const event = await this.eventRepository.findById(booking.eventId);
+    if (event) {
+      event.releaseTicketCategoryQuota(booking.ticketCategoryId, booking.quantity.value);
+      await this.eventRepository.save(event);
+    }
 
     const dto = new ExpireBookingResponseDto();
     dto.bookingId = booking.id.value;

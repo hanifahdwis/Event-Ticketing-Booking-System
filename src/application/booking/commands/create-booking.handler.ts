@@ -15,6 +15,7 @@ import {
   BOOKING_REPOSITORY,
 } from '../../../domain/booking/repositories/booking.repository.interface';
 import { EventId } from '../../../domain/event/value-objects/event-id.vo';
+import { TicketCategoryId } from '../../../domain/event/value-objects/ticket-category-id.vo';
 import { Booking } from '../../../domain/booking/aggregates/booking.aggregate';
 
 @Injectable()
@@ -62,8 +63,11 @@ export class CreateBookingCommandHandler {
       remainingQuota: ticketCategory.quota.remaining,
       customerHasActiveBookingForEvent: !!existingBooking,
     });
+    const tcId = new TicketCategoryId(command.ticketCategoryId);
+    event.reserveTicketCategoryQuota(tcId, command.quantity);
 
     await this.bookingRepository.save(booking);
+    await this.eventRepository.save(event);
 
     const dto = new CreateBookingResponseDto();
     dto.bookingId = booking.id.value;
@@ -71,7 +75,7 @@ export class CreateBookingCommandHandler {
     dto.eventId = booking.eventId.value;
     dto.ticketCategoryId = booking.ticketCategoryId.value;
     dto.quantity = booking.quantity.value;
-    dto.totalPrice = booking.totalPrice.amount;   
+    dto.totalPrice = booking.totalPrice.amount;
     dto.currency = booking.totalPrice.currency;
     dto.status = booking.status.value;
     dto.paymentDeadline = booking.paymentDeadline.value;
