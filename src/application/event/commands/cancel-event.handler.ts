@@ -49,7 +49,7 @@ export class CancelEventCommandHandler {
     if (event.organizerId !== command.organizerId) {
       throw new ForbiddenException('Only the organizer can cancel this event');
     }
-    
+      
     event.cancel();
     await this.eventRepository.save(event);
 

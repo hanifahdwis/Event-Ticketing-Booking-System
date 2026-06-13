@@ -25,9 +25,14 @@ export class GetEventByIdQueryHandler {
     if (!event) {
       throw new NotFoundException(`Event not found: ${query.eventId}`);
     }
+    
+    if (!event.status.isPublished()) {
+      throw new NotFoundException(`Event not found: ${query.eventId}`);
+    }
 
+    const activeCategories = event.ticketCategories.filter((tc) => tc.isActive);
     const now = new Date();
-    const ticketCategoryDtos: TicketCategoryDto[] = event.ticketCategories.map(
+    const ticketCategoryDtos: TicketCategoryDto[] = activeCategories.map(
       (tc: TicketCategory) => {
         const dto = new TicketCategoryDto();
         dto.id = tc.id.value;
@@ -39,10 +44,8 @@ export class GetEventByIdQueryHandler {
         dto.salesStartDate = tc.salesPeriod.startDate;
         dto.salesEndDate = tc.salesPeriod.endDate;
         dto.isActive = tc.isActive;
-
-        if (!tc.isActive) {
-          dto.displayStatus = 'Inactive';
-        } else if (tc.salesPeriod.isComingSoon(now)) {
+        
+        if (tc.salesPeriod.isComingSoon(now)) {
           dto.displayStatus = 'ComingSoon';
         } else if (tc.salesPeriod.isClosed(now)) {
           dto.displayStatus = 'SalesClosed';
