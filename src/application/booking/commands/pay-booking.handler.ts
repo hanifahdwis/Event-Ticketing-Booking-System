@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PayBookingCommand } from './pay-booking.command';
 import { PayBookingResponseDto } from '../dtos/pay-booking.dto';
@@ -18,6 +19,10 @@ import {
   INotificationService,
   NOTIFICATION_SERVICE,
 } from '../../common/interfaces/notification-service.interface';
+import {
+  IPaymentGateway,
+  PAYMENT_GATEWAY,
+} from '../../common/interfaces/payment-gateway.interface';
 import { BookingId } from '../../../domain/booking/value-objects/booking-id.vo';
 import { Money } from '../../../domain/shared/value-objects/money.vo';
 import { Ticket } from '../../../domain/ticket/aggregates/ticket.aggregate';
@@ -31,10 +36,14 @@ export class PayBookingCommandHandler {
     @Inject(TICKET_REPOSITORY)
     private readonly ticketRepository: ITicketRepository,
 
+    @Inject(PAYMENT_GATEWAY)
+    private readonly paymentGateway: IPaymentGateway,
+
     @Inject(NOTIFICATION_SERVICE)
     private readonly notificationService: INotificationService,
   ) {}
 
+  
   async execute(command: PayBookingCommand): Promise<PayBookingResponseDto> {
     const booking = await this.bookingRepository.findById(
       new BookingId(command.bookingId),
@@ -48,8 +57,25 @@ export class PayBookingCommandHandler {
     }
 
     const paymentAmount = new Money(command.paymentAmount, command.currency);
-    booking.pay(paymentAmount);
+
+    const paymentResult = await this.paymentGateway.charge(
+      booking.id.value,
+      command.customerId,
+      paymentAmount.amount,
+      paymentAmount.currency,
+    );
+
+    if (!paymentResult.success) {
+      throw new BadRequestException('Payment failed, booking was not confirmed');
+    }
+
+    try {
+      booking.pay(paymentAmount);
+    } catch (err) {
+      throw new BadRequestException((err as Error).message);
+    }
     await this.bookingRepository.save(booking);
+
     const tickets = Array.from({ length: booking.quantity.value }, () =>
       Ticket.issue({
         bookingId: booking.id,
@@ -74,3 +100,4 @@ export class PayBookingCommandHandler {
     return dto;
   }
 }
+

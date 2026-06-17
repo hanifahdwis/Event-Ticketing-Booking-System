@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ForbiddenException, BadRequestException,} from '@nestjs/common';
 import { AddTicketCategoryCommand } from './add-ticket-category.command';
 import { AddTicketCategoryResponseDto } from '../dtos/add-ticket-category.dto';
 import {
@@ -6,6 +6,7 @@ import {
   EVENT_REPOSITORY,
 } from '../../../domain/event/repositories/event.repository.interface';
 import { EventId } from '../../../domain/event/value-objects/event-id.vo'
+import { TicketCategory } from '../../../domain/event/entities/ticket-category.entity';
 
 @Injectable()
 export class AddTicketCategoryCommandHandler {
@@ -30,16 +31,21 @@ export class AddTicketCategoryCommandHandler {
       );
     }
 
-    const ticketCategory = event.addTicketCategory({
-      name: command.name,
-      price: command.price,
-      currency: command.currency,
-      quota: command.quota,
-      salesPeriod: {
-        startDate: command.salesStartDate,
-        endDate: command.salesEndDate,
-      },
-    });
+    let ticketCategory: TicketCategory;
+    try {
+      ticketCategory = event.addTicketCategory({
+        name: command.name,
+        price: command.price,
+        currency: command.currency,
+        quota: command.quota,
+        salesPeriod: {
+          startDate: command.salesStartDate,
+          endDate: command.salesEndDate,
+        },
+      });
+    } catch (err) {
+      throw new BadRequestException((err as Error).message);
+    }
 
     await this.eventRepository.save(event);
 

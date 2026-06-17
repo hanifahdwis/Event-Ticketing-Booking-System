@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ExpireBookingCommand } from './expire-booking.command';
 import { ExpireBookingResponseDto } from '../dtos/expire-booking.dto';
 import {
@@ -29,8 +29,13 @@ export class ExpireBookingCommandHandler {
       throw new NotFoundException(`Booking not found: ${command.bookingId}`);
     }
 
-    booking.expire();
+    try {
+      booking.expire();
+    } catch (err) {
+      throw new BadRequestException((err as Error).message);
+    }
     await this.bookingRepository.save(booking);
+
     const event = await this.eventRepository.findById(booking.eventId);
     if (event) {
       event.releaseTicketCategoryQuota(booking.ticketCategoryId, booking.quantity.value);
@@ -45,3 +50,4 @@ export class ExpireBookingCommandHandler {
     return dto;
   }
 }
+

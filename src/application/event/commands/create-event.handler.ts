@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { CreateEventCommand } from './create-event.command';
 import { CreateEventResponseDto } from '../dtos/create-event.dto';
 import {
@@ -11,6 +11,7 @@ import {
   NOTIFICATION_SERVICE,
 } from '../../common/interfaces/notification-service.interface';
 
+
 @Injectable()
 export class CreateEventCommandHandler {
   constructor(
@@ -22,20 +23,25 @@ export class CreateEventCommandHandler {
   ) {}
 
   async execute(command: CreateEventCommand): Promise<CreateEventResponseDto> {
-    const event = Event.create({
-      organizerId: command.organizerId,
-      name: command.name,
-      description: command.description,
-      schedule: {
-        startDate: command.startDate,
-        endDate: command.endDate,
-      },
-      location: {
-        address: command.address,
-        city: command.city,
-      },
-      maxCapacity: command.maxCapacity,
-    });
+    let event: Event;
+    try {
+      event = Event.create({
+        organizerId: command.organizerId,
+        name: command.name,
+        description: command.description,
+        schedule: {
+          startDate: command.startDate,
+          endDate: command.endDate,
+        },
+        location: {
+          address: command.address,
+          city: command.city,
+        },
+        maxCapacity: command.maxCapacity,
+      });
+    } catch (err) {
+      throw new BadRequestException((err as Error).message);
+    }
 
     await this.eventRepository.save(event);
 
@@ -60,3 +66,4 @@ export class CreateEventCommandHandler {
     return dto;
   }
 }
+

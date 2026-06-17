@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ForbiddenException, BadRequestException, } from '@nestjs/common';
 import { PublishEventCommand } from './publish-event.command';
 import { PublishEventResponseDto } from '../dtos/publish-event.dto';
 import {
@@ -33,7 +33,11 @@ export class PublishEventCommandHandler {
       throw new ForbiddenException('Only the organizer can publish this event');
     }
 
-    event.publish();
+    try {
+      event.publish();
+    } catch (err) {
+      throw new BadRequestException((err as Error).message);
+    }
 
     await this.eventRepository.save(event);
     await this.notificationService.sendEventPublishedNotification(

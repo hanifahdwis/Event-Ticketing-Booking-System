@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { DisableTicketCategoryCommand } from './disable-ticket-category.command';
 import { DisableTicketCategoryResponseDto } from '../dtos/disable-ticket-category.dto';
@@ -34,7 +35,12 @@ export class DisableTicketCategoryCommandHandler {
       );
     }
     const ticketCategoryId = new TicketCategoryId(command.ticketCategoryId);
-    event.disableTicketCategory(ticketCategoryId);
+
+    try {
+      event.disableTicketCategory(ticketCategoryId);
+    } catch (err) {
+      throw new BadRequestException((err as Error).message);
+    }
 
     await this.eventRepository.save(event);
 
@@ -51,3 +57,4 @@ export class DisableTicketCategoryCommandHandler {
     return dto;
   }
 }
+

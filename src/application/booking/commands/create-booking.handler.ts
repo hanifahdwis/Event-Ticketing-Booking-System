@@ -28,6 +28,7 @@ export class CreateBookingCommandHandler {
     private readonly bookingRepository: IBookingRepository,
   ) {}
 
+
   async execute(command: CreateBookingCommand): Promise<CreateBookingResponseDto> {
     const event = await this.eventRepository.findById(
       new EventId(command.eventId),
@@ -51,20 +52,26 @@ export class CreateBookingCommandHandler {
         command.eventId,
       );
 
-    const booking = Booking.create({
-      customerId: command.customerId,
-      eventId: command.eventId,
-      ticketCategoryId: command.ticketCategoryId,
-      quantity: command.quantity,
-      unitPrice: ticketCategory.price,
-      eventIsPublished: event.status.isPublished(),
-      ticketCategoryIsActive: ticketCategory.isActive,
-      salesPeriodIsActive: ticketCategory.isAvailableAt(new Date()),
-      remainingQuota: ticketCategory.quota.remaining,
-      customerHasActiveBookingForEvent: !!existingBooking,
-    });
-    const tcId = new TicketCategoryId(command.ticketCategoryId);
-    event.reserveTicketCategoryQuota(tcId, command.quantity);
+    let booking: Booking;
+    try {
+      booking = Booking.create({
+        customerId: command.customerId,
+        eventId: command.eventId,
+        ticketCategoryId: command.ticketCategoryId,
+        quantity: command.quantity,
+        unitPrice: ticketCategory.price,
+        eventIsPublished: event.status.isPublished(),
+        ticketCategoryIsActive: ticketCategory.isActive,
+        salesPeriodIsActive: ticketCategory.isAvailableAt(new Date()),
+        remainingQuota: ticketCategory.quota.remaining,
+        customerHasActiveBookingForEvent: !!existingBooking,
+      });
+
+      const tcId = new TicketCategoryId(command.ticketCategoryId);
+      event.reserveTicketCategoryQuota(tcId, command.quantity);
+    } catch (err) {
+      throw new BadRequestException((err as Error).message);
+    }
 
     await this.bookingRepository.save(booking);
     await this.eventRepository.save(event);
@@ -83,3 +90,4 @@ export class CreateBookingCommandHandler {
     return dto;
   }
 }
+
