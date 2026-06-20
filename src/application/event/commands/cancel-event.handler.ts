@@ -30,13 +30,7 @@ import {
 import { EventId } from '../../../domain/event/value-objects/event-id.vo';
 import { RefundId } from '../../../domain/refund/value-objects/refund-id.vo';
 import { Refund } from '../../../domain/refund/aggregates/refund.aggregate';
-import {
-  RefundEligibilityDomainService,
-  IBookingRef,
-  ITicketRef,
-  IEventRef,
-} from '../../../domain/refund/services/refund-eligibility.domain-service';
-
+import { RefundEligibilityDomainService } from '../../../domain/refund/services/refund-eligibility.domain-service';
 
 @Injectable()
 export class CancelEventCommandHandler {
@@ -75,16 +69,27 @@ export class CancelEventCommandHandler {
     }
     await this.eventRepository.save(event);
 
-    const paidBookings = await this.bookingRepository.findAllPaidByEventId(command.eventId);
+    const paidBookings = await this.bookingRepository.findAllPaidByEventId(
+      command.eventId,
+    );
     const eligibilityService = new RefundEligibilityDomainService();
 
     for (const booking of paidBookings) {
+      const existingRefund = await this.refundRepository.findByBookingId(
+        booking.id.value,
+      );
+      if (existingRefund) {
+        continue;
+      }
+
       const tickets = await this.ticketRepository.findByBookingId(booking.id);
 
-      const bookingRef: IBookingRef = { id: booking.id.value, status: booking.status.value };
-      const ticketRefs: ITicketRef[] = tickets.map((t) => ({ status: t.status.value }));
-      const eventRef: IEventRef = { status: event.status.value, startDate: event.schedule.startDate };
-
+      const bookingRef = { id: booking.id.value, status: booking.status.value };
+      const ticketRefs = tickets.map((t) => ({ status: t.status.value }));
+      const eventRef = {
+        status: event.status.value, 
+        startDate: event.schedule.startDate,
+      };
       const ticketsToUpdate = tickets.filter((t) => t.status.isActive());
       for (const ticket of ticketsToUpdate) {
         ticket.markAsRefundRequired();
@@ -93,10 +98,6 @@ export class CancelEventCommandHandler {
         await this.ticketRepository.saveAll(ticketsToUpdate);
       }
 
-      const existingRefund = await this.refundRepository.findByBookingId(booking.id.value);
-      if (existingRefund) {
-        continue;
-      }
       const refund = Refund.request(
         RefundId.create(),
         bookingRef,
@@ -107,7 +108,6 @@ export class CancelEventCommandHandler {
         eligibilityService,
         new Date(),
       );
-
       await this.refundRepository.save(refund);
     }
 
