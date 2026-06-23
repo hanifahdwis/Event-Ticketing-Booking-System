@@ -32,6 +32,8 @@ export class Refund {
     amount: Money,
     status: RefundStatus,
     createdAt: Date,
+    rejectionReason?: RejectionReason,
+    paymentReference?: PaymentReference,
   ) {
     this._id = id;
     this._bookingId = bookingId;
@@ -39,6 +41,8 @@ export class Refund {
     this._amount = amount;
     this._status = status;
     this._createdAt = createdAt;
+    this._rejectionReason = rejectionReason;
+    this._paymentReference = paymentReference;
   }
 
   public static request(
@@ -74,6 +78,28 @@ export class Refund {
     );
 
     return refund;
+  }
+
+  public static reconstitute(
+    id: RefundId,
+    bookingId: string,
+    customerId: string,
+    amount: Money,
+    status: RefundStatus,
+    createdAt: Date,
+    rejectionReason?: RejectionReason,
+    paymentReference?: PaymentReference,
+  ): Refund {
+    return new Refund(
+      id,
+      bookingId,
+      customerId,
+      amount,
+      status,
+      createdAt,
+      rejectionReason,
+      paymentReference,
+    );
   }
 
   public approve(): void {
