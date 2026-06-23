@@ -18,6 +18,7 @@ import { EventId } from '../../../domain/event/value-objects/event-id.vo';
 import { TicketCategoryId } from '../../../domain/event/value-objects/ticket-category-id.vo';
 import { Booking } from '../../../domain/booking/aggregates/booking.aggregate';
 
+
 @Injectable()
 export class CreateBookingCommandHandler {
   constructor(

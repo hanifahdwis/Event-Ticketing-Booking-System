@@ -21,6 +21,7 @@ import {
 import { EventId } from '../../../domain/event/value-objects/event-id.vo';
 import { BookingStatusEnum } from '../../../domain/booking/value-objects/booking-status.vo';
 
+
 @Injectable()
 export class GetEventSalesReportQueryHandler {
   constructor(
@@ -31,6 +32,7 @@ export class GetEventSalesReportQueryHandler {
     private readonly bookingRepository: IBookingRepository,
   ) {}
 
+  
   async execute(
     query: GetEventSalesReportQuery,
   ): Promise<GetEventSalesReportResponseDto> {
@@ -46,19 +48,24 @@ export class GetEventSalesReportQueryHandler {
       );
     }
 
-    const salesPerCategory: TicketCategorySalesDto[] = event.ticketCategories.map(
-      (tc) => {
-        const sold = tc.quota.total - tc.quota.remaining;
-        return {
-          ticketCategoryId: tc.id.value,
-          ticketCategoryName: tc.name.value,
-          ticketsSold: sold,
-        };
-      },
-    );
-
     const allBookings = await this.bookingRepository.findAllByEventId(
       query.eventId,
+    );
+    const soldPerCategory = new Map<string, number>();
+    for (const booking of allBookings) {
+      if (booking.status.isPaid()) {
+        const catId = booking.ticketCategoryId.value;
+        const prev = soldPerCategory.get(catId) ?? 0;
+        soldPerCategory.set(catId, prev + booking.quantity.value);
+      }
+    }
+
+    const salesPerCategory: TicketCategorySalesDto[] = event.ticketCategories.map(
+      (tc) => ({
+        ticketCategoryId: tc.id.value,
+        ticketCategoryName: tc.name.value,
+        ticketsSold: soldPerCategory.get(tc.id.value) ?? 0,
+      }),
     );
 
     const statusCounts: BookingStatusCountDto = {
@@ -101,3 +108,4 @@ export class GetEventSalesReportQueryHandler {
     return dto;
   }
 }
+

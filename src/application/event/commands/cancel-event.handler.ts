@@ -32,6 +32,7 @@ import { RefundId } from '../../../domain/refund/value-objects/refund-id.vo';
 import { Refund } from '../../../domain/refund/aggregates/refund.aggregate';
 import { RefundEligibilityDomainService } from '../../../domain/refund/services/refund-eligibility.domain-service';
 
+
 @Injectable()
 export class CancelEventCommandHandler {
   constructor(
@@ -51,7 +52,7 @@ export class CancelEventCommandHandler {
     private readonly notificationService: INotificationService,
   ) {}
 
-
+  
   async execute(command: CancelEventCommand): Promise<CancelEventResponseDto> {
     const eventId = new EventId(command.eventId);
     const event = await this.eventRepository.findById(eventId);
@@ -61,6 +62,8 @@ export class CancelEventCommandHandler {
     if (event.organizerId !== command.organizerId) {
       throw new ForbiddenException('Only the organizer can cancel this event');
     }
+
+    const eventStartDate = event.schedule.startDate;
 
     try {
       event.cancel();
@@ -83,13 +86,13 @@ export class CancelEventCommandHandler {
       }
 
       const tickets = await this.ticketRepository.findByBookingId(booking.id);
-
       const bookingRef = { id: booking.id.value, status: booking.status.value };
       const ticketRefs = tickets.map((t) => ({ status: t.status.value }));
       const eventRef = {
         status: event.status.value, 
-        startDate: event.schedule.startDate,
+        startDate: eventStartDate,
       };
+
       const ticketsToUpdate = tickets.filter((t) => t.status.isActive());
       for (const ticket of ticketsToUpdate) {
         ticket.markAsRefundRequired();
