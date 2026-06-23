@@ -1,15 +1,11 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Pool } from 'pg';
-
-import {
-  IRefundRepository,
-} from '../../../domain/refund/repositories/refund.repository.interface';
+import { IRefundRepository } from '../../../domain/refund/repositories/refund.repository.interface';
 import { Refund } from '../../../domain/refund/aggregates/refund.aggregate';
 import { RefundId } from '../../../domain/refund/value-objects/refund-id.vo';
 import { RefundStatus } from '../../../domain/refund/value-objects/refund-status.vo';
 import { RejectionReason } from '../../../domain/refund/value-objects/rejection-reason.vo';
 import { PaymentReference } from '../../../domain/refund/value-objects/payment-reference.vo';
-import { RefundEligibilityDomainService } from '../../../domain/refund/services/refund-eligibility.domain-service';
 import { Money } from '../../../domain/shared/value-objects/money.vo';
 import { DB_POOL } from '../../event/repositories/event.repository';
 
@@ -84,56 +80,23 @@ export class RefundRepository implements IRefundRepository {
   }
 
   private mapRowToRefund(row: any): Refund {
-    const eligibilityService = new RefundEligibilityDomainService();
+    const rejectionReason = row.rejection_reason
+      ? RejectionReason.create(row.rejection_reason)
+      : undefined;
 
-    const refund = this.reconstituteRefund(row, eligibilityService);
-    return refund;
-  }
+    const paymentReference = row.payment_reference
+      ? PaymentReference.create(row.payment_reference)
+      : undefined;
 
-  private reconstituteRefund(
-    row: any,
-    eligibilityService: RefundEligibilityDomainService,
-  ): Refund {
-    const mockBooking = { id: row.booking_id, status: 'Paid' };
-    const mockTickets = [{ status: 'Active' }];
-    const mockEvent = {
-      status: 'Published',
-      startDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), 
-    };
-
-    const alwaysEligibleService = {
-      isEligible: () => true,
-    } as unknown as RefundEligibilityDomainService;
-
-    const refund = Refund.request(
+    return Refund.reconstitute(
       RefundId.restore(row.id),
-      mockBooking,
-      mockTickets,
-      mockEvent,
+      row.booking_id,
       row.customer_id,
       new Money(parseFloat(row.amount), row.currency),
-      alwaysEligibleService,
+      row.status as RefundStatus,
       new Date(row.created_at),
+      rejectionReason,
+      paymentReference,
     );
-
-    refund.clearDomainEvents();
-    const status = row.status as RefundStatus;
-
-    if (status === RefundStatus.Approved) {
-      refund.approve();
-      refund.clearDomainEvents();
-    } else if (status === RefundStatus.Rejected) {
-      refund.reject(RejectionReason.create(row.rejection_reason ?? 'Unknown'));
-      refund.clearDomainEvents();
-    } else if (status === RefundStatus.PaidOut) {
-      refund.approve();
-      refund.clearDomainEvents();
-      refund.markAsPaidOut(
-        PaymentReference.create(row.payment_reference ?? ''),
-      );
-      refund.clearDomainEvents();
-    }
-
-    return refund;
   }
 }

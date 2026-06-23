@@ -3,9 +3,9 @@ export class PaymentReference {
 
   private constructor(value: string) {
     if (!value || value.trim().length === 0) {
-      throw new Error('Payment reference tidak boleh kosong');
+      throw new Error('Payment reference cannot be empty');
     }
-    this._value = value;
+    this._value = value.trim();
   }
 
   public static create(value: string): PaymentReference {
