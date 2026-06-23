@@ -4,8 +4,9 @@ import { EventApplicationModule } from './application/event/event-application.mo
 import { BookingApplicationModule } from './application/booking/booking-application.module';
 import { TicketApplicationModule } from './application/ticket/ticket-application.module';
 import { RefundApplicationModule } from './application/refund/refund-application.module';
+import { PresentationModule } from './presentation/presentation.module';
 
 @Module({
-  imports: [InfrastructureModule, EventApplicationModule, BookingApplicationModule, TicketApplicationModule, RefundApplicationModule,],
+  imports: [InfrastructureModule, EventApplicationModule, BookingApplicationModule, TicketApplicationModule, RefundApplicationModule, PresentationModule],
 })
 export class AppModule {}

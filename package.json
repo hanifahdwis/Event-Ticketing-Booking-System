@@ -21,7 +21,10 @@
     "typeorm": "^1.0.0"
   },
   "scripts": {
+    "start": "ts-node src/main.ts",
     "migrate": "ts-node src/infrastructure/database/run-migration.ts",
     "test": "jest"
   }
 }
+
+
