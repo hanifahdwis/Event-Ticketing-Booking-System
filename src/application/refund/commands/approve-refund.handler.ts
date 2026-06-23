@@ -88,6 +88,15 @@ export class ApproveRefundCommandHandler {
       await this.ticketRepository.saveAll(ticketsToCancel);
     }
 
+    try {
+      event.releaseTicketCategoryQuota(
+        booking.ticketCategoryId,
+        booking.quantity.value,
+      );
+      await this.eventRepository.save(event);
+    } catch {
+    }
+
     await this.notificationService.sendRefundStatusNotification(
       refund.customerId,
       refund.id.getValue(),
@@ -103,4 +112,3 @@ export class ApproveRefundCommandHandler {
     return dto;
   }
 }
-
