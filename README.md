@@ -44,6 +44,109 @@ The API will be available at `http://localhost:3000`.
 npm test
 ```
 
+## REST API Summary
+
+### Event Endpoints
+
+* `POST /events`
+* `GET /events`
+* `GET /events/<event_id>`
+* `PATCH /events/<event_id>/publish`
+* `PATCH /events/<event_id>/cancel`
+* `POST /events/<event_id>/ticket-categories`
+* `PATCH /events/<event_id>/ticket-categories/<category_id>/disable`
+* `GET /events/<event_id>/sales-report`
+* `GET /events/<event_id>/participants`
+
+### Booking Endpoints
+
+* `POST /bookings`
+* `PATCH /bookings/<booking_id>/pay`
+* `PATCH /bookings/<booking_id>/expire`
+* `POST /bookings/expire-overdue`
+* `GET /bookings/my-tickets`
+* `GET /bookings/<booking_id>/tickets`
+
+### Ticket Endpoints
+
+* `POST /tickets/check-in`
+
+### Refund Endpoints
+
+* `POST /refunds`
+* `PATCH /refunds/<refund_id>/approve`
+* `PATCH /refunds/<refund_id>/reject`
+* `PATCH /refunds/<refund_id>/paid-out`
+
+### Example Create Event Request
+
+```json
+{
+  "organizerId": "ORG-001",
+  "name": "Tech Conference 2026",
+  "description": "Annual technology conference",
+  "startDate": "2026-08-10T09:00:00Z",
+  "endDate": "2026-08-10T17:00:00Z",
+  "address": "ITS Sukolilo",
+  "city": "Surabaya",
+  "maxCapacity": 500
+}
+```
+
+### Example Create Ticket Category Request
+
+```json
+{
+  "organizerId": "ORG-001",
+  "name": "VIP",
+  "price": 500000,
+  "currency": "IDR",
+  "quota": 100,
+  "salesStartDate": "2026-07-01T00:00:00Z",
+  "salesEndDate": "2026-08-10T00:00:00Z"
+}
+```
+
+### Example Create Booking Request
+
+```json
+{
+  "customerId": "CUS-001",
+  "customerName": "Malika",
+  "eventId": "EVT-001",
+  "ticketCategoryId": "CAT-001",
+  "quantity": 2
+}
+```
+
+### Example Pay Booking Request
+
+```json
+{
+  "customerId": "CUS-001",
+  "paymentAmount": 1000000,
+  "currency": "IDR"
+}
+```
+
+### Example Refund Request
+
+```json
+{
+  "customerId": "CUS-001",
+  "bookingId": "BOOK-001"
+}
+```
+
+### Example Ticket Check-In Request
+
+```json
+{
+  "ticketCode": "VIP-001",
+  "eventId": "EVT-001"
+}
+```
+
 ---
 
 ## Implemented User Stories
@@ -207,18 +310,18 @@ event-ticketing/
 ---
 
 ## Domain Model
-## Domain Model Diagram
+## 3. Initial Domain Model Draft
 
 ```mermaid
 classDiagram
 
     class Event {
-        +UUID id
-        +UUID organizerId
-        +String name
+        +EventId id
+        +String organizerId
+        +EventName name
         +String description
         +EventSchedule schedule
-        +String location
+        +Location location
         +Capacity maxCapacity
         +EventStatus status
 
@@ -229,21 +332,26 @@ classDiagram
     }
 
     class TicketCategory {
-        +UUID id
-        +String name
+        +TicketCategoryId id
+        +TicketCategoryName name
         +Money price
         +Quota quota
         +SalesPeriod salesPeriod
-        +boolean active
+        +boolean isActive
 
         +disable()
+        +reserveQuota()
+        +releaseQuota()
+        +isSoldOut()
+        +isAvailableAt()
     }
 
     class Booking {
-        +UUID id
-        +UUID customerId
-        +UUID eventId
-        +UUID ticketCategoryId
+        +BookingId id
+        +String customerId
+        +String customerName
+        +EventId eventId
+        +TicketCategoryId ticketCategoryId
         +Quantity quantity
         +Money totalPrice
         +PaymentDeadline paymentDeadline
@@ -254,10 +362,12 @@ classDiagram
     }
 
     class Ticket {
-        +UUID id
-        +UUID bookingId
-        +UUID eventId
-        +TicketCode ticketCode
+        +TicketId id
+        +BookingId bookingId
+        +String customerId
+        +EventId eventId
+        +TicketCategoryId ticketCategoryId
+        +TicketCode code
         +TicketStatus status
 
         +checkIn()
@@ -266,82 +376,24 @@ classDiagram
     }
 
     class Refund {
-        +UUID id
-        +UUID bookingId
+        +RefundId id
+        +String bookingId
+        +String customerId
         +Money amount
         +RefundStatus status
         +RejectionReason rejectionReason
+        +PaymentReference paymentReference
 
         +approve()
         +reject(reason)
         +markPaidOut()
     }
 
-    class Money
-    class Quantity
-    class Capacity
-    class Quota
-    class EventSchedule
-    class SalesPeriod
-    class PaymentDeadline
-    class TicketCode
-    class RejectionReason
-
     Event "1" *-- "many" TicketCategory : contains
-    Booking "1" *-- "many" Ticket : issues
-    Booking "1" --> "1" TicketCategory : reserves
     Booking "1" --> "1" Event : belongs to
+    Booking "1" --> "1" TicketCategory : reserves
+    Booking "1" *-- "many" Ticket : issues
     Booking "1" --> "0..1" Refund : may request
-
-    TicketCategory ..> Money
-    TicketCategory ..> Quota
-    TicketCategory ..> SalesPeriod
-
-    Event ..> EventSchedule
-    Event ..> Capacity
-
-    Booking ..> Quantity
-    Booking ..> Money
-    Booking ..> PaymentDeadline
-
-    Ticket ..> TicketCode
-
-    Refund ..> Money
-    Refund ..> RejectionReason
-```
-
-### Aggregate Boundaries
-
-#### Event Aggregate
-
-* Event (Aggregate Root)
-* TicketCategory (Entity)
-
-#### Booking Aggregate
-
-* Booking (Aggregate Root)
-
-#### Ticket Aggregate
-
-* Ticket (Aggregate Root)
-
-#### Refund Aggregate
-
-* Refund (Aggregate Root)
-
-### Value Objects
-
-* Money
-* Quantity
-* Capacity
-* Quota
-* EventSchedule
-* SalesPeriod
-* PaymentDeadline
-* TicketCode
-* RejectionReason
-
-```
 ```
 
 ### Aggregates & Entities
@@ -468,8 +520,6 @@ Refund (Aggregate Root)
 ---
 
 ## Implemented Application Service Interfaces
-
-> To be implemented in Week 11. Interfaces will be declared in `src/application/` and their concrete implementations will live in `src/infrastructure/`.
 
 | Interface | Purpose |
 |---|---|
