@@ -15,12 +15,14 @@ import { PayBookingCommandHandler } from '../../application/booking/commands/pay
 import { ExpireBookingCommandHandler } from '../../application/booking/commands/expire-booking.handler';
 import { ExpireOverdueBookingsCommandHandler } from '../../application/booking/commands/expire-overdue-bookings.handler';
 import { GetPurchasedTicketsQueryHandler } from '../../application/booking/queries/get-purchased-tickets.handler';
+import { GetAllPurchasedTicketsQueryHandler } from '../../application/booking/queries/get-all-purchased-tickets.handler';
 
 import { CreateBookingCommand } from '../../application/booking/commands/create-booking.command';
 import { PayBookingCommand } from '../../application/booking/commands/pay-booking.command';
 import { ExpireBookingCommand } from '../../application/booking/commands/expire-booking.command';
 import { ExpireOverdueBookingsCommand } from '../../application/booking/commands/expire-overdue-bookings.command';
 import { GetPurchasedTicketsQuery } from '../../application/booking/queries/get-purchased-tickets.query';
+import { GetAllPurchasedTicketsQuery } from '../../application/booking/queries/get-all-purchased-tickets.query';
 
 class CreateBookingRequestBody {
   customerId: string;
@@ -45,8 +47,10 @@ export class BookingController {
     private readonly expireBookingHandler: ExpireBookingCommandHandler,
     private readonly expireOverdueBookingsHandler: ExpireOverdueBookingsCommandHandler,
     private readonly getPurchasedTicketsHandler: GetPurchasedTicketsQueryHandler,
+    private readonly getAllPurchasedTicketsHandler: GetAllPurchasedTicketsQueryHandler,
   ) {}
 
+  
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async createBooking(@Body() body: CreateBookingRequestBody) {
@@ -59,6 +63,7 @@ export class BookingController {
     );
     return this.createBookingHandler.execute(command);
   }
+
 
   @Patch(':bookingId/pay')
   async payBooking(
@@ -73,6 +78,7 @@ export class BookingController {
     );
     return this.payBookingHandler.execute(command);
   }
+
 
   @Patch(':bookingId/expire')
   async expireBooking(@Param('bookingId') bookingId: string) {
@@ -94,5 +100,11 @@ export class BookingController {
   ) {
     const query = new GetPurchasedTicketsQuery(customerId, bookingId);
     return this.getPurchasedTicketsHandler.execute(query);
+  }
+
+  @Get('my-tickets')
+  async getAllPurchasedTickets(@Query('customerId') customerId: string) {
+    const query = new GetAllPurchasedTicketsQuery(customerId);
+    return this.getAllPurchasedTicketsHandler.execute(query);
   }
 }

@@ -5,6 +5,7 @@ import { PayBookingCommandHandler } from './commands/pay-booking.handler';
 import { ExpireBookingCommandHandler } from './commands/expire-booking.handler';
 import { ExpireOverdueBookingsCommandHandler } from './commands/expire-overdue-bookings.handler';
 import { GetPurchasedTicketsQueryHandler } from './queries/get-purchased-tickets.handler';
+import { GetAllPurchasedTicketsQueryHandler } from './queries/get-all-purchased-tickets.handler';
 
 @Module({
   imports: [InfrastructureModule],
@@ -14,6 +15,7 @@ import { GetPurchasedTicketsQueryHandler } from './queries/get-purchased-tickets
     ExpireBookingCommandHandler,
     ExpireOverdueBookingsCommandHandler,
     GetPurchasedTicketsQueryHandler,
+    GetAllPurchasedTicketsQueryHandler,
   ],
   exports: [
     CreateBookingCommandHandler,
@@ -21,7 +23,7 @@ import { GetPurchasedTicketsQueryHandler } from './queries/get-purchased-tickets
     ExpireBookingCommandHandler,
     ExpireOverdueBookingsCommandHandler,
     GetPurchasedTicketsQueryHandler,
+    GetAllPurchasedTicketsQueryHandler,
   ],
 })
 export class BookingApplicationModule {}
-

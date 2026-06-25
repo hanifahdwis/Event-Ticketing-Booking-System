@@ -68,7 +68,7 @@ export class ApproveRefundCommandHandler {
     if (event.organizerId !== command.organizerId) {
       throw new ForbiddenException('Only the organizer can approve refunds for this event');
     }
-
+    
     try {
       refund.approve();
     } catch (err) {
@@ -78,7 +78,6 @@ export class ApproveRefundCommandHandler {
 
     booking.markAsRefunded();
     await this.bookingRepository.save(booking);
-
     const tickets = await this.ticketRepository.findByBookingId(booking.id);
     const ticketsToCancel = tickets.filter((t) => !t.status.isCancelled());
     for (const ticket of ticketsToCancel) {
@@ -94,7 +93,10 @@ export class ApproveRefundCommandHandler {
         booking.quantity.value,
       );
       await this.eventRepository.save(event);
-    } catch {
+    } catch (err) {
+      console.warn(
+        `Could not release quota for ticket category ${booking.ticketCategoryId.value}: ${(err as Error).message}`,
+      );
     }
 
     await this.notificationService.sendRefundStatusNotification(

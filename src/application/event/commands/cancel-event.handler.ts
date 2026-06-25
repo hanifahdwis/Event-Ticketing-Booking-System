@@ -20,17 +20,10 @@ import {
   TICKET_REPOSITORY,
 } from '../../../domain/ticket/repositories/ticket.repository.interface';
 import {
-  IRefundRepository,
-  REFUND_REPOSITORY,
-} from '../../../domain/refund/repositories/refund.repository.interface';
-import {
   INotificationService,
   NOTIFICATION_SERVICE,
 } from '../../common/interfaces/notification-service.interface';
 import { EventId } from '../../../domain/event/value-objects/event-id.vo';
-import { RefundId } from '../../../domain/refund/value-objects/refund-id.vo';
-import { Refund } from '../../../domain/refund/aggregates/refund.aggregate';
-import { RefundEligibilityDomainService } from '../../../domain/refund/services/refund-eligibility.domain-service';
 
 
 @Injectable()
@@ -45,14 +38,11 @@ export class CancelEventCommandHandler {
     @Inject(TICKET_REPOSITORY)
     private readonly ticketRepository: ITicketRepository,
 
-    @Inject(REFUND_REPOSITORY)
-    private readonly refundRepository: IRefundRepository,
-
     @Inject(NOTIFICATION_SERVICE)
     private readonly notificationService: INotificationService,
   ) {}
 
-  
+
   async execute(command: CancelEventCommand): Promise<CancelEventResponseDto> {
     const eventId = new EventId(command.eventId);
     const event = await this.eventRepository.findById(eventId);
@@ -63,36 +53,18 @@ export class CancelEventCommandHandler {
       throw new ForbiddenException('Only the organizer can cancel this event');
     }
 
-    const eventStartDate = event.schedule.startDate;
-
     try {
       event.cancel();
     } catch (err) {
       throw new BadRequestException((err as Error).message);
     }
     await this.eventRepository.save(event);
-
     const paidBookings = await this.bookingRepository.findAllPaidByEventId(
       command.eventId,
     );
-    const eligibilityService = new RefundEligibilityDomainService();
 
     for (const booking of paidBookings) {
-      const existingRefund = await this.refundRepository.findByBookingId(
-        booking.id.value,
-      );
-      if (existingRefund) {
-        continue;
-      }
-
       const tickets = await this.ticketRepository.findByBookingId(booking.id);
-      const bookingRef = { id: booking.id.value, status: booking.status.value };
-      const ticketRefs = tickets.map((t) => ({ status: t.status.value }));
-      const eventRef = {
-        status: event.status.value, 
-        startDate: eventStartDate,
-      };
-
       const ticketsToUpdate = tickets.filter((t) => t.status.isActive());
       for (const ticket of ticketsToUpdate) {
         ticket.markAsRefundRequired();
@@ -100,18 +72,6 @@ export class CancelEventCommandHandler {
       if (ticketsToUpdate.length > 0) {
         await this.ticketRepository.saveAll(ticketsToUpdate);
       }
-
-      const refund = Refund.request(
-        RefundId.create(),
-        bookingRef,
-        ticketRefs,
-        eventRef,
-        booking.customerId,
-        booking.totalPrice,
-        eligibilityService,
-        new Date(),
-      );
-      await this.refundRepository.save(refund);
     }
 
     await this.notificationService.sendEventCancelledNotification(

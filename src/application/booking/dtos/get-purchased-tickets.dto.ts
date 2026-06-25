@@ -3,7 +3,7 @@ export class PurchasedTicketDto {
   ticketCode: string;
   eventId: string;
   ticketCategoryId: string;
-  status: string;    
+  status: string;
 }
 
 export class GetPurchasedTicketsResponseDto {
