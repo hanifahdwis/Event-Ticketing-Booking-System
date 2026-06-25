@@ -32,6 +32,10 @@ class RejectRefundRequestBody {
   reason: string;
 }
 
+class MarkRefundPaidOutRequestBody {
+  adminId: string;
+}
+
 
 @Controller('refunds')
 export class RefundController {
@@ -72,8 +76,12 @@ export class RefundController {
   }
 
   @Patch(':refundId/paid-out')
-  async markRefundPaidOut(@Param('refundId') refundId: string) {
-    const command = new MarkRefundPaidOutCommand(refundId);
+  async markRefundPaidOut(
+    @Param('refundId') refundId: string,
+    @Body() body: MarkRefundPaidOutRequestBody,
+  ) {
+    const command = new MarkRefundPaidOutCommand(refundId, body.adminId);
     return this.markRefundPaidOutHandler.execute(command);
   }
 }
+

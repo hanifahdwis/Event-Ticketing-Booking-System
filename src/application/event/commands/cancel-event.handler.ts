@@ -72,6 +72,8 @@ export class CancelEventCommandHandler {
       if (ticketsToUpdate.length > 0) {
         await this.ticketRepository.saveAll(ticketsToUpdate);
       }
+      booking.markAsRefunded();
+      await this.bookingRepository.save(booking);
     }
 
     await this.notificationService.sendEventCancelledNotification(
