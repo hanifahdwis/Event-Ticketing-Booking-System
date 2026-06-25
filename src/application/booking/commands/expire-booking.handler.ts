@@ -29,8 +29,9 @@ export class ExpireBookingCommandHandler {
       throw new NotFoundException(`Booking not found: ${command.bookingId}`);
     }
 
+    const now = new Date();
     try {
-      booking.expire();
+      booking.expire(now);
     } catch (err) {
       throw new BadRequestException((err as Error).message);
     }
@@ -45,9 +46,8 @@ export class ExpireBookingCommandHandler {
     const dto = new ExpireBookingResponseDto();
     dto.bookingId = booking.id.value;
     dto.status = booking.status.value;
-    dto.expiredAt = new Date();
+    dto.expiredAt = now;
 
     return dto;
   }
 }
-

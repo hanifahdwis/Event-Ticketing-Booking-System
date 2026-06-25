@@ -1,5 +1,104 @@
 # Event Ticketing & Booking System
 
+## How to Run the Project
+
+### Prerequisites
+- Node.js >= 18
+- PostgreSQL >= 14
+
+### 1. Install Dependencies
+```bash
+npm install
+```
+
+### 2. Configure PostgreSQL
+
+Create a `.env` file in the project root with the following variables:
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+DB_NAME=event_ticketing
+```
+
+Then create the database in PostgreSQL:
+```sql
+CREATE DATABASE event_ticketing;
+```
+
+### 3. Run Database Migration
+```bash
+npm run migrate
+```
+
+### 4. Start the Application
+```bash
+npm run start
+```
+
+The API will be available at `http://localhost:3000`.
+
+### 5. Run Tests
+```bash
+npm test
+```
+
+---
+
+## Implemented User Stories
+
+| # | User Story |
+|---|---|
+| US 1 | Create Event |
+| US 2 | Publish Event |
+| US 3 | Cancel Event |
+| US 4 | Create Ticket Category |
+| US 5 | Disable Ticket Category |
+| US 6 | View Available Events |
+| US 7 | View Event Details |
+| US 8 | Create Ticket Booking |
+| US 9 | Calculate Booking Total Price |
+| US 10 | Pay Booking |
+| US 11 | Expire Booking |
+| US 12 | View Purchased Tickets |
+| US 13 | Check In Ticket |
+| US 14 | Reject Invalid Ticket Check-in |
+| US 15 | Request Refund |
+| US 16 | Approve Refund |
+| US 17 | Reject Refund |
+| US 18 | Mark Refund as Paid Out |
+| US 19 | View Event Sales Report |
+| US 20 | View Event Participants |
+
+## Implemented Domain Events
+
+| Domain Event | Raised When |
+|---|---|
+| `EventCreated` | A new event is successfully created |
+| `EventPublished` | An event transitions from Draft to Published |
+| `EventCancelled` | A Published event is cancelled |
+| `TicketCategoryCreated` | A ticket category is added to an event |
+| `TicketCategoryDisabled` | A ticket category is deactivated |
+| `TicketReserved` | A booking is created (quota reserved) |
+| `BookingPaid` | A booking payment is confirmed |
+| `BookingExpired` | A booking passes its payment deadline unpaid |
+| `TicketCheckedIn` | A ticket is scanned and validated at entry |
+| `RefundRequested` | A customer submits a refund request |
+| `RefundApproved` | An organizer approves a refund request |
+| `RefundRejected` | An organizer rejects a refund request |
+| `RefundPaidOut` | Admin marks a refund as disbursed |
+
+## Implemented Application Service Interfaces
+
+| Interface | Purpose |
+|---|---|
+| `IPaymentGateway` | Process booking payments via external payment gateway |
+| `IRefundPaymentService` | Disburse refunds via bank/external refund service |
+| `INotificationService` | Send email or WhatsApp notifications to customers |
+
+---
+
 ```
 event-ticketing/
 ├── src/
@@ -10,16 +109,16 @@ event-ticketing/
 │   │   │   ├── entities/
 │   │   │   │   └── ticket-category.entity.ts
 │   │   │   ├── value-objects/
-│   │   │   │   ├── capacity.vo.ts           ← Max event capacity (must be > 0)
-│   │   │   │   ├── event-id.vo.ts           ← UUID-based event identifier
-│   │   │   │   ├── event-name.vo.ts         ← Non-empty, max 255 chars
-│   │   │   │   ├── event-schedule.vo.ts     ← startDate + endDate (end >= start)
-│   │   │   │   ├── event-status.vo.ts       ← Draft | Published | Cancelled | Completed
-│   │   │   │   ├── location.vo.ts           ← address + city (both non-empty)
-│   │   │   │   ├── quota.vo.ts              ← total + remaining (immutable, replaceable)
-│   │   │   │   ├── sales-period.vo.ts       ← salesStart + salesEnd <= eventStart
-│   │   │   │   ├── ticket-category-id.vo.ts ← UUID-based ticket category identifier
-│   │   │   │   └── ticket-category-name.vo.ts← Non-empty, max 100 chars
+│   │   │   │   ├── capacity.vo.ts           
+│   │   │   │   ├── event-id.vo.ts           
+│   │   │   │   ├── event-name.vo.ts         
+│   │   │   │   ├── event-schedule.vo.ts     
+│   │   │   │   ├── event-status.vo.ts       
+│   │   │   │   ├── location.vo.ts           
+│   │   │   │   ├── quota.vo.ts              
+│   │   │   │   ├── sales-period.vo.ts       
+│   │   │   │   ├── ticket-category-id.vo.ts
+│   │   │   │   └── ticket-category-name.vo.ts
 │   │   │   ├── domain-events/
 │   │   │   │   ├── event-created.domain-event.ts
 │   │   │   │   ├── event-published.domain-event.ts
@@ -33,10 +132,10 @@ event-ticketing/
 │   │   │   ├── aggregates/
 │   │   │   │   └── booking.aggregate.ts     
 │   │   │   ├── value-objects/
-│   │   │   │   ├── booking-id.vo.ts         ← (scaffolded)
-│   │   │   │   ├── booking-status.vo.ts     ← PendingPayment | Paid | Expired | Refunded
-│   │   │   │   ├── payment-deadline.vo.ts   ← 15 min after booking creation
-│   │   │   │   └── quantity.vo.ts           ← must be > 0
+│   │   │   │   ├── booking-id.vo.ts        
+│   │   │   │   ├── booking-status.vo.ts     
+│   │   │   │   ├── payment-deadline.vo.ts   
+│   │   │   │   └── quantity.vo.ts          
 │   │   │   ├── services/
 │   │   │   │   └── booking-pricing.domain-service.ts
 │   │   │   └── repositories/
@@ -46,9 +145,9 @@ event-ticketing/
 │   │   │   ├── aggregates/
 │   │   │   │   └── ticket.aggregate.ts      
 │   │   │   ├── value-objects/
-│   │   │   │   ├── ticket-id.vo.ts          ← (scaffolded)
-│   │   │   │   ├── ticket-code.vo.ts        ← unique code per ticket
-│   │   │   │   └── ticket-status.vo.ts      ← Active | CheckedIn | Cancelled
+│   │   │   │   ├── ticket-id.vo.ts          
+│   │   │   │   ├── ticket-code.vo.ts        
+│   │   │   │   └── ticket-status.vo.ts      
 │   │   │   ├── services/
 │   │   │   │   └── ticket-code-generator.domain-service.ts  
 │   │   │   ├── domain-events/
@@ -60,10 +159,10 @@ event-ticketing/
 │   │   │   ├── aggregates/
 │   │   │   │   └── refund.aggregate.ts      
 │   │   │   ├── value-objects/
-│   │   │   │   ├── refund-id.vo.ts          ← (scaffolded)
-│   │   │   │   ├── refund-status.vo.ts      ← Requested | Approved | Rejected | PaidOut
-│   │   │   │   ├── rejection-reason.vo.ts   ← (scaffolded)
-│   │   │   │   └── payment-reference.vo.ts  ← (scaffolded)
+│   │   │   │   ├── refund-id.vo.ts          
+│   │   │   │   ├── refund-status.vo.ts      
+│   │   │   │   ├── rejection-reason.vo.ts   
+│   │   │   │   └── payment-reference.vo.ts  
 │   │   │   ├── services/
 │   │   │   │   └── refund-eligibility.domain-service.ts  
 │   │   │   ├── domain-events/
@@ -74,11 +173,11 @@ event-ticketing/
 │   │   │   └── repositories/
 │   │   │       └── refund.repository.interface.ts     
 │   │   │
-│   │   └── shared/                          ← Cross-cutting domain concepts
+│   │   └── shared/                          
 │   │       └── value-objects/
-│   │           ├── money.vo.ts              ← amount + currency (amount >= 0)
-│   │           ├── customer-id.vo.ts        ← (scaffolded)
-│   │           └── organizer-id.vo.ts       ← (scaffolded)
+│   │           ├── money.vo.ts              
+│   │           ├── customer-id.vo.ts        
+│   │           └── organizer-id.vo.ts       
 │   │
 │   ├── application/                         
 │   ├── infrastructure/                     
@@ -172,7 +271,7 @@ Refund (Aggregate Root)
 |---|---|---|
 | `TicketId` | `value: UUID` | Auto-generated |
 | `TicketCode` | `value: string` | Unique, generated after payment |
-| `TicketStatus` | `value: enum` | Active → CheckedIn; Active → Cancelled |
+| `TicketStatus` | `value: enum` | Active → CheckedIn; Active → Cancelled; Active → RefundRequired |
 
 ### Refund Value Objects  
 

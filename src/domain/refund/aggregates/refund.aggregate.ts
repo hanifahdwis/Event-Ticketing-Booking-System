@@ -23,7 +23,7 @@ export class Refund {
   private _rejectionReason?: RejectionReason;
   private _paymentReference?: PaymentReference;
   private _createdAt: Date;
-  private _domainEvents: unknown[] = [];
+  private _domainEvents: object[] = [];
 
   private constructor(
     id: RefundId,
@@ -162,9 +162,9 @@ export class Refund {
   public get rejectionReason(): RejectionReason | undefined { return this._rejectionReason; }
   public get paymentReference(): PaymentReference | undefined { return this._paymentReference; }
   public get createdAt(): Date { return this._createdAt; }
-  public get domainEvents(): unknown[] { return [...this._domainEvents]; }
+  public get domainEvents(): object[] { return [...this._domainEvents]; }
 
-  private addDomainEvent(event: unknown): void {
+  private addDomainEvent(event: object): void {
     this._domainEvents.push(event);
   }
 

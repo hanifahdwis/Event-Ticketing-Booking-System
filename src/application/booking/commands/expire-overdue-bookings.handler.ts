@@ -37,7 +37,7 @@ export class ExpireOverdueBookingsCommandHandler {
 
     for (const booking of overdueBookings) {
       try {
-        booking.expire();
+        booking.expire(command.at);
       } catch {
         continue;
       }
@@ -64,4 +64,3 @@ export class ExpireOverdueBookingsCommandHandler {
     };
   }
 }
-

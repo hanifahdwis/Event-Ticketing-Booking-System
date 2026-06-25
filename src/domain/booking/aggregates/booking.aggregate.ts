@@ -150,12 +150,15 @@ export class Booking {
   }
 
   
-  expire(): void {
+  expire(at: Date = new Date()): void {
     if (this._status.isPaid()) {
       throw new Error('A Paid booking cannot be marked as expired');
     }
     if (!this._status.isPendingPayment()) {
       throw new Error('Only a PendingPayment booking can be expired');
+    }
+    if (!this._paymentDeadline.isExpired(at)) {
+      throw new Error('A booking can only be expired after its payment deadline has passed');
     }
 
     this._status = BookingStatus.expired();

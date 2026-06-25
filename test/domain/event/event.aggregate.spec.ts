@@ -7,8 +7,6 @@ import { TicketCategoryDisabledDomainEvent } from '../../../src/domain/event/dom
 import { EventStatus } from '../../../src/domain/event/value-objects/event-status.vo';
 import { TicketCategoryId } from '../../../src/domain/event/value-objects/ticket-category-id.vo';
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
 const dayAfter = (base: Date, days: number) => {
   const d = new Date(base);
   d.setDate(d.getDate() + days);
@@ -45,8 +43,6 @@ const buildPublishedEvent = () => {
   event.clearDomainEvents();
   return { event, props };
 };
-
-// ── US 1: Create Event ────────────────────────────────────────────────────────
 
 describe('US 1 – Create Event', () => {
   it('should create an event with status Draft', () => {
@@ -93,8 +89,6 @@ describe('US 1 – Create Event', () => {
     expect(event.location.city).toBe(props.location.city);
   });
 });
-
-// ── US 2: Publish Event ───────────────────────────────────────────────────────
 
 describe('US 2 – Publish Event', () => {
   const buildDraftEventWithCategory = () => {
@@ -174,8 +168,6 @@ describe('US 2 – Publish Event', () => {
   });
 });
 
-// ── US 3: Cancel Event ────────────────────────────────────────────────────────
-
 describe('US 3 – Cancel Event', () => {
   it('should cancel a Published event and change status to Cancelled', () => {
     const { event } = buildPublishedEvent();
@@ -243,8 +235,6 @@ describe('US 3 – Cancel Event', () => {
     expect(() => event.cancel()).toThrow('Only a Published event can be cancelled');
   });
 });
-
-// ── US 4: Create Ticket Category ──────────────────────────────────────────────
 
 describe('US 4 – Create Ticket Category', () => {
   const buildEvent = () => {
@@ -349,8 +339,6 @@ describe('US 4 – Create Ticket Category', () => {
     expect(tc.isActive).toBe(true);
   });
 });
-
-// ── US 5: Disable Ticket Category ─────────────────────────────────────────────
 
 describe('US 5 – Disable Ticket Category', () => {
   it('should disable an active ticket category', () => {

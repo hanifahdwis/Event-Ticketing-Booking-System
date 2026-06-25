@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Pool } from 'pg';
 import { Inject } from '@nestjs/common';
-
 import { IEventRepository } from '../../../domain/event/repositories/event.repository.interface';
 import { Event } from '../../../domain/event/aggregates/event.aggregate';
 import { EventId } from '../../../domain/event/value-objects/event-id.vo';
@@ -82,22 +81,6 @@ export class EventRepository implements IEventRepository {
           event.status.value,
         ],
       );
-
-      const existingTcResult = await client.query(
-        'SELECT id FROM ticket_categories WHERE event_id = $1',
-        [event.id.value],
-      );
-      const existingIds = new Set(existingTcResult.rows.map((r) => r.id));
-      const currentIds = new Set(event.ticketCategories.map((tc) => tc.id.value));
-
-      for (const existingId of existingIds) {
-        if (!currentIds.has(existingId)) {
-          await client.query(
-            'DELETE FROM ticket_categories WHERE id = $1',
-            [existingId],
-          );
-        }
-      }
 
       for (const tc of event.ticketCategories) {
         await client.query(
