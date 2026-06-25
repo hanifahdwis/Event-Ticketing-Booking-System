@@ -1,9 +1,10 @@
 export class ParticipantDto {
-  customerId: string;        
+  customerId: string;
+  customerName: string;
   ticketCategoryId: string;
   ticketCategoryName: string;
   ticketCode: string;
-  checkInStatus: string;     
+  checkInStatus: string;
 }
 
 export class GetEventParticipantsResponseDto {

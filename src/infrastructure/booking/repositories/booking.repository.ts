@@ -104,6 +104,7 @@ export class BookingRepository implements IBookingRepository {
         `INSERT INTO bookings (
             id,
             customer_id,
+            customer_name,
             event_id,
             ticket_category_id,
             quantity,
@@ -114,7 +115,7 @@ export class BookingRepository implements IBookingRepository {
             created_at,
             updated_at
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
           ON CONFLICT (id) DO UPDATE SET
             status               = EXCLUDED.status,
             total_price_amount   = EXCLUDED.total_price_amount,
@@ -123,6 +124,7 @@ export class BookingRepository implements IBookingRepository {
         [
           booking.id.value,
           booking.customerId,
+          booking.customerName,
           booking.eventId.value,
           booking.ticketCategoryId.value,
           booking.quantity.value,
@@ -141,6 +143,7 @@ export class BookingRepository implements IBookingRepository {
     return Booking.reconstitute(
       new BookingId(row.id),
       row.customer_id,
+      row.customer_name ?? '',
       new EventId(row.event_id),
       new TicketCategoryId(row.ticket_category_id),
       new Quantity(row.quantity),

@@ -7,6 +7,6 @@ import { RefundApplicationModule } from './application/refund/refund-application
 import { PresentationModule } from './presentation/presentation.module';
 
 @Module({
-  imports: [InfrastructureModule, EventApplicationModule, BookingApplicationModule, TicketApplicationModule, RefundApplicationModule, PresentationModule],
+  imports: [InfrastructureModule, PresentationModule]
 })
 export class AppModule {}

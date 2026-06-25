@@ -57,6 +57,7 @@ export class CreateBookingCommandHandler {
     try {
       booking = Booking.create({
         customerId: command.customerId,
+        customerName: command.customerName,
         eventId: command.eventId,
         ticketCategoryId: command.ticketCategoryId,
         quantity: command.quantity,
@@ -91,4 +92,3 @@ export class CreateBookingCommandHandler {
     return dto;
   }
 }
-

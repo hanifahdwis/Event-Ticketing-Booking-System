@@ -70,6 +70,7 @@ export class GetEventParticipantsQueryHandler {
 
         const participant = new ParticipantDto();
         participant.customerId = booking.customerId;
+        participant.customerName = booking.customerName;
         participant.ticketCategoryId = ticket.ticketCategoryId.value;
         participant.ticketCategoryName = categoryName;
         participant.ticketCode = ticket.code.value;

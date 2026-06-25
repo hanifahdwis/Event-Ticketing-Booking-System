@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS bookings (
     id                  UUID         PRIMARY KEY,
     customer_id         VARCHAR(255) NOT NULL,
+    customer_name       VARCHAR(255) NOT NULL DEFAULT '',
     event_id            UUID         NOT NULL REFERENCES events(id),
     ticket_category_id  UUID         NOT NULL REFERENCES ticket_categories(id),
     quantity            INTEGER      NOT NULL CHECK (quantity > 0),
@@ -22,3 +23,4 @@ CREATE INDEX IF NOT EXISTS idx_bookings_customer_event ON bookings(customer_id, 
 CREATE INDEX IF NOT EXISTS idx_bookings_deadline_status
     ON bookings(payment_deadline, status)
     WHERE status = 'PendingPayment';
+    

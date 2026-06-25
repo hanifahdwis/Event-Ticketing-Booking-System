@@ -11,6 +11,7 @@ import { BookingExpiredDomainEvent } from '../domain-events/booking-expired.doma
 
 export interface CreateBookingProps {
   customerId: string;
+  customerName: string;
   eventId: string;
   ticketCategoryId: string;
   quantity: number;
@@ -26,6 +27,7 @@ export interface CreateBookingProps {
 export class Booking {
   private _id: BookingId;
   private _customerId: string;
+  private _customerName: string;
   private _eventId: EventId;
   private _ticketCategoryId: TicketCategoryId;
   private _quantity: Quantity;
@@ -61,6 +63,7 @@ export class Booking {
     const booking = new Booking();
     booking._id = new BookingId();
     booking._customerId = props.customerId;
+    booking._customerName = props.customerName;
     booking._eventId = new EventId(props.eventId);
     booking._ticketCategoryId = new TicketCategoryId(props.ticketCategoryId);
     booking._quantity = quantity;
@@ -88,6 +91,7 @@ export class Booking {
   static reconstitute(
     id: BookingId,
     customerId: string,
+    customerName: string,
     eventId: EventId,
     ticketCategoryId: TicketCategoryId,
     quantity: Quantity,
@@ -98,6 +102,7 @@ export class Booking {
     const booking = new Booking();
     booking._id = id;
     booking._customerId = customerId;
+    booking._customerName = customerName;
     booking._eventId = eventId;
     booking._ticketCategoryId = ticketCategoryId;
     booking._quantity = quantity;
@@ -109,6 +114,7 @@ export class Booking {
 
   get id(): BookingId { return this._id; }
   get customerId(): string { return this._customerId; }
+  get customerName(): string { return this._customerName; }
   get eventId(): EventId { return this._eventId; }
   get ticketCategoryId(): TicketCategoryId { return this._ticketCategoryId; }
   get quantity(): Quantity { return this._quantity; }
@@ -116,6 +122,7 @@ export class Booking {
   get status(): BookingStatus { return this._status; }
   get paymentDeadline(): PaymentDeadline { return this._paymentDeadline; }
   get domainEvents(): object[] { return [...this._domainEvents]; }
+
 
   pay(paymentAmount: Money, at: Date = new Date()): void {
     if (!this._status.isPendingPayment()) {
@@ -142,6 +149,7 @@ export class Booking {
     );
   }
 
+  
   expire(): void {
     if (this._status.isPaid()) {
       throw new Error('A Paid booking cannot be marked as expired');

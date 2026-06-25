@@ -24,6 +24,7 @@ import { GetPurchasedTicketsQuery } from '../../application/booking/queries/get-
 
 class CreateBookingRequestBody {
   customerId: string;
+  customerName: string;
   eventId: string;
   ticketCategoryId: string;
   quantity: number;
@@ -51,6 +52,7 @@ export class BookingController {
   async createBooking(@Body() body: CreateBookingRequestBody) {
     const command = new CreateBookingCommand(
       body.customerId,
+      body.customerName,
       body.eventId,
       body.ticketCategoryId,
       body.quantity,
@@ -71,6 +73,7 @@ export class BookingController {
     );
     return this.payBookingHandler.execute(command);
   }
+
   @Patch(':bookingId/expire')
   async expireBooking(@Param('bookingId') bookingId: string) {
     const command = new ExpireBookingCommand(bookingId);
@@ -93,4 +96,3 @@ export class BookingController {
     return this.getPurchasedTicketsHandler.execute(query);
   }
 }
-
