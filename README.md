@@ -207,6 +207,142 @@ event-ticketing/
 ---
 
 ## Domain Model
+## Domain Model Diagram
+
+```mermaid
+classDiagram
+
+    class Event {
+        +UUID id
+        +UUID organizerId
+        +String name
+        +String description
+        +EventSchedule schedule
+        +String location
+        +Capacity maxCapacity
+        +EventStatus status
+
+        +publish()
+        +cancel()
+        +addTicketCategory()
+        +disableTicketCategory()
+    }
+
+    class TicketCategory {
+        +UUID id
+        +String name
+        +Money price
+        +Quota quota
+        +SalesPeriod salesPeriod
+        +boolean active
+
+        +disable()
+    }
+
+    class Booking {
+        +UUID id
+        +UUID customerId
+        +UUID eventId
+        +UUID ticketCategoryId
+        +Quantity quantity
+        +Money totalPrice
+        +PaymentDeadline paymentDeadline
+        +BookingStatus status
+
+        +pay()
+        +expire()
+    }
+
+    class Ticket {
+        +UUID id
+        +UUID bookingId
+        +UUID eventId
+        +TicketCode ticketCode
+        +TicketStatus status
+
+        +checkIn()
+        +cancel()
+        +markRefundRequired()
+    }
+
+    class Refund {
+        +UUID id
+        +UUID bookingId
+        +Money amount
+        +RefundStatus status
+        +RejectionReason rejectionReason
+
+        +approve()
+        +reject(reason)
+        +markPaidOut()
+    }
+
+    class Money
+    class Quantity
+    class Capacity
+    class Quota
+    class EventSchedule
+    class SalesPeriod
+    class PaymentDeadline
+    class TicketCode
+    class RejectionReason
+
+    Event "1" *-- "many" TicketCategory : contains
+    Booking "1" *-- "many" Ticket : issues
+    Booking "1" --> "1" TicketCategory : reserves
+    Booking "1" --> "1" Event : belongs to
+    Booking "1" --> "0..1" Refund : may request
+
+    TicketCategory ..> Money
+    TicketCategory ..> Quota
+    TicketCategory ..> SalesPeriod
+
+    Event ..> EventSchedule
+    Event ..> Capacity
+
+    Booking ..> Quantity
+    Booking ..> Money
+    Booking ..> PaymentDeadline
+
+    Ticket ..> TicketCode
+
+    Refund ..> Money
+    Refund ..> RejectionReason
+```
+
+### Aggregate Boundaries
+
+#### Event Aggregate
+
+* Event (Aggregate Root)
+* TicketCategory (Entity)
+
+#### Booking Aggregate
+
+* Booking (Aggregate Root)
+
+#### Ticket Aggregate
+
+* Ticket (Aggregate Root)
+
+#### Refund Aggregate
+
+* Refund (Aggregate Root)
+
+### Value Objects
+
+* Money
+* Quantity
+* Capacity
+* Quota
+* EventSchedule
+* SalesPeriod
+* PaymentDeadline
+* TicketCode
+* RejectionReason
+
+```
+```
 
 ### Aggregates & Entities
 
