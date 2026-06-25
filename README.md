@@ -205,101 +205,226 @@ npm test
 ```
 event-ticketing/
 ├── src/
-│   ├── domain/                              
-│   │   ├── event/                           
+│   ├── Main.ts
+│   ├── app.module.ts
+│   │
+│   ├── domain/
+│   │   ├── event/
 │   │   │   ├── aggregates/
-│   │   │   │   └── event.aggregate.ts       
+│   │   │   │   └── event.aggregate.ts
 │   │   │   ├── entities/
 │   │   │   │   └── ticket-category.entity.ts
 │   │   │   ├── value-objects/
-│   │   │   │   ├── capacity.vo.ts           
-│   │   │   │   ├── event-id.vo.ts           
-│   │   │   │   ├── event-name.vo.ts         
-│   │   │   │   ├── event-schedule.vo.ts     
-│   │   │   │   ├── event-status.vo.ts       
-│   │   │   │   ├── location.vo.ts           
-│   │   │   │   ├── quota.vo.ts              
-│   │   │   │   ├── sales-period.vo.ts       
+│   │   │   │   ├── capacity.vo.ts
+│   │   │   │   ├── event-id.vo.ts
+│   │   │   │   ├── event-name.vo.ts
+│   │   │   │   ├── event-schedule.vo.ts
+│   │   │   │   ├── event-status.vo.ts
+│   │   │   │   ├── location.vo.ts
+│   │   │   │   ├── quota.vo.ts
+│   │   │   │   ├── sales-period.vo.ts
 │   │   │   │   ├── ticket-category-id.vo.ts
 │   │   │   │   └── ticket-category-name.vo.ts
 │   │   │   ├── domain-events/
 │   │   │   │   ├── event-created.domain-event.ts
 │   │   │   │   ├── event-published.domain-event.ts
-│   │   │   │   ├── event-cancelled.domain-event.ts      
+│   │   │   │   ├── event-cancelled.domain-event.ts
 │   │   │   │   ├── ticket-category-created.domain-event.ts
 │   │   │   │   └── ticket-category-disabled.domain-event.ts
 │   │   │   └── repositories/
-│   │   │       └── event.repository.interface.ts        
+│   │   │       └── event.repository.interface.ts
 │   │   │
-│   │   ├── booking/                        
+│   │   ├── booking/
 │   │   │   ├── aggregates/
-│   │   │   │   └── booking.aggregate.ts     
+│   │   │   │   └── booking.aggregate.ts
 │   │   │   ├── value-objects/
-│   │   │   │   ├── booking-id.vo.ts        
-│   │   │   │   ├── booking-status.vo.ts     
-│   │   │   │   ├── payment-deadline.vo.ts   
-│   │   │   │   └── quantity.vo.ts          
+│   │   │   │   ├── booking-id.vo.ts
+│   │   │   │   ├── booking-status.vo.ts
+│   │   │   │   ├── payment-deadline.vo.ts
+│   │   │   │   └── quantity.vo.ts
+│   │   │   ├── domain-events/
+│   │   │   │   ├── booking-expired.domain-event.ts
+│   │   │   │   ├── booking-paid.domain-event.ts
+│   │   │   │   └── ticket-reserved.domain-event.ts
 │   │   │   ├── services/
 │   │   │   │   └── booking-pricing.domain-service.ts
 │   │   │   └── repositories/
-│   │   │       └── booking.repository.interface.ts  
+│   │   │       └── booking.repository.interface.ts
 │   │   │
-│   │   ├── ticket/                         
+│   │   ├── ticket/
 │   │   │   ├── aggregates/
-│   │   │   │   └── ticket.aggregate.ts      
+│   │   │   │   └── ticket.aggregate.ts
 │   │   │   ├── value-objects/
-│   │   │   │   ├── ticket-id.vo.ts          
-│   │   │   │   ├── ticket-code.vo.ts        
-│   │   │   │   └── ticket-status.vo.ts      
+│   │   │   │   ├── ticket-id.vo.ts
+│   │   │   │   ├── ticket-code.vo.ts
+│   │   │   │   └── ticket-status.vo.ts
 │   │   │   ├── services/
-│   │   │   │   └── ticket-code-generator.domain-service.ts  
+│   │   │   │   └── ticket-code-generator.domain-service.ts
 │   │   │   ├── domain-events/
-│   │   │   │   └── ticket-checked-in.domain-event.ts  
+│   │   │   │   └── ticket-checked-in.domain-event.ts
 │   │   │   └── repositories/
-│   │   │       └── ticket.repository.interface.ts    
+│   │   │       └── ticket.repository.interface.ts
 │   │   │
-│   │   ├── refund/                          
+│   │   ├── refund/
 │   │   │   ├── aggregates/
-│   │   │   │   └── refund.aggregate.ts      
+│   │   │   │   └── refund.aggregate.ts
 │   │   │   ├── value-objects/
-│   │   │   │   ├── refund-id.vo.ts          
-│   │   │   │   ├── refund-status.vo.ts      
-│   │   │   │   ├── rejection-reason.vo.ts   
-│   │   │   │   └── payment-reference.vo.ts  
+│   │   │   │   ├── refund-id.vo.ts
+│   │   │   │   ├── refund-status.vo.ts
+│   │   │   │   ├── rejection-reason.vo.ts
+│   │   │   │   └── payment-reference.vo.ts
 │   │   │   ├── services/
-│   │   │   │   └── refund-eligibility.domain-service.ts  
+│   │   │   │   └── refund-eligibility.domain-service.ts
 │   │   │   ├── domain-events/
-│   │   │   │   ├── refund-requested.domain-event.ts   
-│   │   │   │   ├── refund-approved.domain-event.ts   
-│   │   │   │   ├── refund-rejected.domain-event.ts   
-│   │   │   │   └── refund-paid-out.domain-event.ts    
+│   │   │   │   ├── refund-requested.domain-event.ts
+│   │   │   │   ├── refund-approved.domain-event.ts
+│   │   │   │   ├── refund-rejected.domain-event.ts
+│   │   │   │   └── refund-paid-out.domain-event.ts
 │   │   │   └── repositories/
-│   │   │       └── refund.repository.interface.ts     
+│   │   │       └── refund.repository.interface.ts
 │   │   │
-│   │   └── shared/                          
+│   │   └── shared/
 │   │       └── value-objects/
-│   │           ├── money.vo.ts              
-│   │           ├── customer-id.vo.ts        
-│   │           └── organizer-id.vo.ts       
+│   │           ├── money.vo.ts
+│   │           ├── customer-id.vo.ts
+│   │           └── organizer-id.vo.ts
 │   │
-│   ├── application/                         
-│   ├── infrastructure/                     
-│   └── presentation/                        
+│   ├── application/
+│   │   ├── common/
+│   │   │   └── interfaces/
+│   │   │       ├── notification-service.interface.ts
+│   │   │       ├── payment-gateway.interface.ts
+│   │   │       └── refund-payment-service.interface.ts
+│   │   │
+│   │   ├── event/
+│   │   │   ├── commands/
+│   │   │   │   ├── create-event.command.ts
+│   │   │   │   ├── create-event.handler.ts
+│   │   │   │   ├── publish-event.command.ts
+│   │   │   │   ├── publish-event.handler.ts
+│   │   │   │   ├── cancel-event.command.ts
+│   │   │   │   ├── cancel-event.handler.ts
+│   │   │   │   ├── add-ticket-category.command.ts
+│   │   │   │   ├── add-ticket-category.handler.ts
+│   │   │   │   ├── disable-ticket-category.command.ts
+│   │   │   │   └── disable-ticket-category.handler.ts
+│   │   │   ├── queries/
+│   │   │   │   ├── get-available-events.query.ts
+│   │   │   │   ├── get-available-events.handler.ts
+│   │   │   │   ├── get-event-by-id.query.ts
+│   │   │   │   ├── get-event-by-id.handler.ts
+│   │   │   │   ├── get-event-participants.query.ts
+│   │   │   │   ├── get-event-participants.handler.ts
+│   │   │   │   ├── get-event-sales-report.query.ts
+│   │   │   │   └── get-event-sales-report.handler.ts
+│   │   │   ├── dtos/
+│   │   │   │   ├── create-event.dto.ts
+│   │   │   │   ├── publish-event.dto.ts
+│   │   │   │   ├── cancel-event.dto.ts
+│   │   │   │   ├── add-ticket-category.dto.ts
+│   │   │   │   ├── disable-ticket-category.dto.ts
+│   │   │   │   ├── get-available-events.dto.ts
+│   │   │   │   ├── get-event.dto.ts
+│   │   │   │   ├── get-event-participants.dto.ts
+│   │   │   │   └── get-event-sales-report.dto.ts
+│   │   │   └── event-application.module.ts
+│   │   │
+│   │   ├── booking/
+│   │   │   ├── commands/
+│   │   │   │   ├── create-booking.command.ts
+│   │   │   │   ├── create-booking.handler.ts
+│   │   │   │   ├── pay-booking.command.ts
+│   │   │   │   ├── pay-booking.handler.ts
+│   │   │   │   ├── expire-booking.command.ts
+│   │   │   │   ├── expire-booking.handler.ts
+│   │   │   │   ├── expire-overdue-bookings.command.ts
+│   │   │   │   └── expire-overdue-bookings.handler.ts
+│   │   │   ├── queries/
+│   │   │   │   ├── get-purchased-tickets.query.ts
+│   │   │   │   ├── get-purchased-tickets.handler.ts
+│   │   │   │   ├── get-all-purchased-tickets.query.ts
+│   │   │   │   └── get-all-purchased-tickets.handler.ts
+│   │   │   ├── dtos/
+│   │   │   │   ├── create-booking.dto.ts
+│   │   │   │   ├── pay-booking.dto.ts
+│   │   │   │   ├── expire-booking.dto.ts
+│   │   │   │   └── get-purchased-tickets.dto.ts
+│   │   │   └── booking-application.module.ts
+│   │   │
+│   │   ├── ticket/
+│   │   │   ├── commands/
+│   │   │   │   ├── check-in-ticket.command.ts
+│   │   │   │   └── check-in-ticket.handler.ts
+│   │   │   ├── dtos/
+│   │   │   │   └── check-in-ticket.dto.ts
+│   │   │   └── ticket-application.module.ts
+│   │   │
+│   │   └── refund/
+│   │       ├── commands/
+│   │       │   ├── request-refund.command.ts
+│   │       │   ├── request-refund.handler.ts
+│   │       │   ├── approve-refund.command.ts
+│   │       │   ├── approve-refund.handler.ts
+│   │       │   ├── reject-refund.command.ts
+│   │       │   ├── reject-refund.handler.ts
+│   │       │   ├── mark-refund-paid-out.command.ts
+│   │       │   └── mark-refund-paid-out.handler.ts
+│   │       ├── dtos/
+│   │       │   ├── request-refund.dto.ts
+│   │       │   ├── approve-refund.dto.ts
+│   │       │   ├── reject-refund.dto.ts
+│   │       │   └── mark-refund-paid-out.dto.ts
+│   │       └── refund-application.module.ts
+│   │
+│   ├── infrastructure/
+│   │   ├── database/
+│   │   │   ├── database.config.ts
+│   │   │   ├── run-migration.ts
+│   │   │   └── migrations/
+│   │   │       ├── 001_create_events_and_ticket_categories.sql
+│   │   │       ├── 002_create_bookings.sql
+│   │   │       ├── 003_create_tickets.sql
+│   │   │       └── 004_create_refunds.sql
+│   │   ├── event/
+│   │   │   └── repositories/
+│   │   │       └── event.repository.ts
+│   │   ├── booking/
+│   │   │   └── repositories/
+│   │   │       └── booking.repository.ts
+│   │   ├── ticket/
+│   │   │   └── repositories/
+│   │   │       └── ticket.repository.ts
+│   │   ├── refund/
+│   │   │   └── repositories/
+│   │   │       └── refund.repository.ts
+│   │   ├── services/
+│   │   │   ├── payment-gateway.service.ts
+│   │   │   ├── refund-payment.service.ts
+│   │   │   └── notification.service.ts
+│   │   └── infrastructure.module.ts
+│   │
+│   └── presentation/
+│       ├── controllers/
+│       │   ├── event.controller.ts
+│       │   ├── booking.controller.ts
+│       │   ├── ticket.controller.ts
+│       │   └── refund.controller.ts
+│       └── presentation.module.ts
 │
 ├── test/
 │   └── domain/
 │       ├── event/
-│       │   ├── event.aggregate.spec.ts       
-│       │   ├── event-schedule.vo.spec.ts    
-│       │   └── ticket-category.entity.spec.ts  
+│       │   ├── event.aggregate.spec.ts
+│       │   ├── event-schedule.vo.spec.ts
+│       │   └── ticket-category.entity.spec.ts
 │       ├── booking/
-│       │   ├── booking.aggregate.spec.ts     
-│       │   └── quantity.vo.spec.ts          
+│       │   ├── booking.aggregate.spec.ts
+│       │   └── quantity.vo.spec.ts
 │       ├── refund/
-│       │   ├── refund.aggregate.spec.ts      
-│       │   └── refund-eligibility.domain-service.spec.ts  
+│       │   ├── refund.aggregate.spec.ts
+│       │   └── refund-eligibility.domain-service.spec.ts
 │       └── ticket/
-│           └── ticket.aggregate.spec.ts     
+│           └── ticket.aggregate.spec.ts
 │
 ├── jest.config.js
 ├── tsconfig.json
