@@ -12,12 +12,15 @@ export interface IBookingRepository {
   findExpiredPendingBookings(at: Date): Promise<Booking[]>;
 
   findAllPaidByEventId(eventId: string): Promise<Booking[]>;
- 
+
   findAllByEventId(eventId: string): Promise<Booking[]>;
 
   findAllPaidByCustomerId(customerId: string): Promise<Booking[]>;
   
+  findAllPaidOrRefundedByCustomerId(customerId: string): Promise<Booking[]>;
+
   save(booking: Booking): Promise<void>;
 }
 
 export const BOOKING_REPOSITORY = Symbol('IBookingRepository');
+

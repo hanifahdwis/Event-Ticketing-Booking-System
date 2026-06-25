@@ -42,8 +42,7 @@ export class GetPurchasedTicketsQueryHandler {
     if (booking.customerId !== query.customerId) {
       throw new ForbiddenException('You are not the owner of this booking');
     }
-
-    if (!booking.status.isPaid()) {
+    if (!booking.status.isPaid() && !booking.status.isRefunded()) {
       throw new ForbiddenException(
         'Tickets are only available for paid bookings',
       );
@@ -51,13 +50,15 @@ export class GetPurchasedTicketsQueryHandler {
 
     const tickets = await this.ticketRepository.findByBookingId(booking.id);
 
-    const ticketDtos: PurchasedTicketDto[] = tickets.map((ticket) => ({
-      ticketId: ticket.id.value,
-      ticketCode: ticket.code.value,
-      eventId: ticket.eventId.value,
-      ticketCategoryId: ticket.ticketCategoryId.value,
-      status: ticket.status.value,
-    }));
+    const ticketDtos: PurchasedTicketDto[] = tickets.map((ticket) => {
+      const dto = new PurchasedTicketDto();
+      dto.ticketId = ticket.id.value;
+      dto.ticketCode = ticket.code.value;
+      dto.eventId = ticket.eventId.value;
+      dto.ticketCategoryId = ticket.ticketCategoryId.value;
+      dto.status = ticket.status.value;
+      return dto;
+    });
 
     const dto = new GetPurchasedTicketsResponseDto();
     dto.bookingId = query.bookingId;
@@ -66,3 +67,4 @@ export class GetPurchasedTicketsQueryHandler {
     return dto;
   }
 }
+

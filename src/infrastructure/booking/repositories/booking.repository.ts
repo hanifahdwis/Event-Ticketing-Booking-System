@@ -112,6 +112,21 @@ export class BookingRepository implements IBookingRepository {
     }
   }
 
+  async findAllPaidOrRefundedByCustomerId(customerId: string): Promise<Booking[]> {
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        `SELECT * FROM bookings
+         WHERE customer_id = $1
+           AND status IN ('Paid', 'Refunded')`,
+        [customerId],
+      );
+      return result.rows.map((row) => this.mapRowToBooking(row));
+    } finally {
+      client.release();
+    }
+  }
+
   async save(booking: Booking): Promise<void> {
     const client = await this.pool.connect();
     try {
@@ -168,3 +183,4 @@ export class BookingRepository implements IBookingRepository {
     );
   }
 }
+

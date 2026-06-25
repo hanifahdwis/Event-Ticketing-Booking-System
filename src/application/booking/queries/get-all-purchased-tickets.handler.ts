@@ -28,13 +28,13 @@ export class GetAllPurchasedTicketsQueryHandler {
   async execute(
     query: GetAllPurchasedTicketsQuery,
   ): Promise<GetAllPurchasedTicketsResponseDto> {
-    const paidBookings = await this.bookingRepository.findAllPaidByCustomerId(
+    const bookings = await this.bookingRepository.findAllPaidOrRefundedByCustomerId(
       query.customerId,
     );
 
     const allTicketDtos: PurchasedTicketDto[] = [];
 
-    for (const booking of paidBookings) {
+    for (const booking of bookings) {
       const tickets = await this.ticketRepository.findByBookingId(booking.id);
       for (const ticket of tickets) {
         const dto = new PurchasedTicketDto();
