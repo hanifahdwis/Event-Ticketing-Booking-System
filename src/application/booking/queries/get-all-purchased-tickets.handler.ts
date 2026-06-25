@@ -1,9 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { GetAllPurchasedTicketsQuery } from './get-all-purchased-tickets.query';
-import {
-  GetPurchasedTicketsResponseDto,
-  PurchasedTicketDto,
-} from '../dtos/get-purchased-tickets.dto';
+import { PurchasedTicketDto } from '../dtos/get-purchased-tickets.dto';
 import {
   IBookingRepository,
   BOOKING_REPOSITORY,
@@ -13,6 +10,10 @@ import {
   TICKET_REPOSITORY,
 } from '../../../domain/ticket/repositories/ticket.repository.interface';
 
+export class GetAllPurchasedTicketsResponseDto {
+  customerId: string;
+  tickets: PurchasedTicketDto[];
+}
 
 @Injectable()
 export class GetAllPurchasedTicketsQueryHandler {
@@ -26,7 +27,7 @@ export class GetAllPurchasedTicketsQueryHandler {
 
   async execute(
     query: GetAllPurchasedTicketsQuery,
-  ): Promise<GetPurchasedTicketsResponseDto> {
+  ): Promise<GetAllPurchasedTicketsResponseDto> {
     const paidBookings = await this.bookingRepository.findAllPaidByCustomerId(
       query.customerId,
     );
@@ -46,8 +47,8 @@ export class GetAllPurchasedTicketsQueryHandler {
       }
     }
 
-    const responseDto = new GetPurchasedTicketsResponseDto();
-    responseDto.bookingId = '';
+    const responseDto = new GetAllPurchasedTicketsResponseDto();
+    responseDto.customerId = query.customerId;
     responseDto.tickets = allTicketDtos;
 
     return responseDto;

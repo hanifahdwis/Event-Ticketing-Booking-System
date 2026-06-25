@@ -17,6 +17,7 @@ const SERVICE_FEE = new Money(5_000, 'IDR');
 function makeValidProps(overrides: Partial<CreateBookingProps> = {}): CreateBookingProps {
   return {
     customerId: 'customer-001',
+    customerName: 'Test Customer',
     eventId: 'event-001',
     ticketCategoryId: 'cat-001',
     quantity: 2,
@@ -197,7 +198,7 @@ describe('US 10 – Pay Booking', () => {
   it('should include correct quantity in BookingPaid event', () => {
     const booking = Booking.create(makeValidProps({ quantity: 3 }));
     booking.clearDomainEvents();
-    booking.pay(new Money(450_000, 'IDR')); // 3 × 150,000
+    booking.pay(new Money(450_000, 'IDR')); 
     const event = booking.domainEvents[0] as BookingPaidDomainEvent;
     expect(event.quantity).toBe(3);
   });
@@ -210,8 +211,17 @@ describe('US 10 – Pay Booking', () => {
   });
 
   it('should throw when trying to pay an Expired booking', () => {
-    const booking = Booking.create(makeValidProps({ quantity: 2 }));
-    booking.expire();
+    const booking = Booking.reconstitute(
+      new BookingId(),
+      'customer-001',
+      'Test Customer',
+      new EventId('event-001'),
+      new TicketCategoryId('cat-001'),
+      new Quantity(2),
+      new Money(300_000, 'IDR'),
+      BookingStatus.expired(),
+      new PaymentDeadline(new Date()),
+    );
     expect(() => booking.pay(new Money(300_000, 'IDR'))).toThrow(
       'A booking can only be paid if its status is PendingPayment',
     );
@@ -252,42 +262,57 @@ describe('US 10 – Pay Booking', () => {
 });
 
 describe('US 11 – Expire Booking', () => {
+  function makeExpirableBooking(qty = 2): { booking: Booking; afterDeadline: Date } {
+    const booking = Booking.create(makeValidProps({ quantity: qty }));
+    const afterDeadline = new Date();
+    afterDeadline.setMinutes(afterDeadline.getMinutes() + 20);
+    return { booking, afterDeadline };
+  }
 
-  it('should transition status to Expired', () => {
-    const booking = Booking.create(makeValidProps());
-    booking.expire();
+  it('should transition status to Expired after deadline has passed', () => {
+    const { booking, afterDeadline } = makeExpirableBooking();
+    booking.expire(afterDeadline);
     expect(booking.status.isExpired()).toBe(true);
   });
 
   it('should raise exactly one BookingExpired domain event', () => {
-    const booking = Booking.create(makeValidProps({ quantity: 2 }));
+    const { booking, afterDeadline } = makeExpirableBooking();
     booking.clearDomainEvents();
-    booking.expire();
+    booking.expire(afterDeadline);
     const events = booking.domainEvents;
     expect(events).toHaveLength(1);
     expect(events[0]).toBeInstanceOf(BookingExpiredDomainEvent);
   });
 
   it('should carry the correct released quota in the BookingExpired event', () => {
-    const booking = Booking.create(makeValidProps({ quantity: 3 }));
+    const { booking, afterDeadline } = makeExpirableBooking(3);
     booking.clearDomainEvents();
-    booking.expire();
+    booking.expire(afterDeadline);
     const event = booking.domainEvents[0] as BookingExpiredDomainEvent;
     expect(event.releasedQuota).toBe(3);
   });
 
   it('should throw when trying to expire a Paid booking', () => {
     const booking = makePaidBooking();
-    expect(() => booking.expire()).toThrow(
+    const afterDeadline = new Date();
+    afterDeadline.setMinutes(afterDeadline.getMinutes() + 20);
+    expect(() => booking.expire(afterDeadline)).toThrow(
       'A Paid booking cannot be marked as expired',
     );
   });
 
   it('should throw when trying to expire an already-expired booking', () => {
-    const booking = Booking.create(makeValidProps());
-    booking.expire();
-    expect(() => booking.expire()).toThrow(
+    const { booking, afterDeadline } = makeExpirableBooking();
+    booking.expire(afterDeadline);
+    expect(() => booking.expire(afterDeadline)).toThrow(
       'Only a PendingPayment booking can be expired',
+    );
+  });
+
+  it('should throw when payment deadline has not yet passed', () => {
+    const booking = Booking.create(makeValidProps());
+    expect(() => booking.expire(new Date())).toThrow(
+      'A booking can only be expired after its payment deadline has passed',
     );
   });
 
@@ -333,10 +358,12 @@ describe('Booking.reconstitute()', () => {
     const deadline = new PaymentDeadline(new Date());
 
     const booking = Booking.reconstitute(
-      id, 'customer-X', eventId, catId, qty, price, status, deadline,
+      id, 'customer-X', 'Jane Doe', eventId, catId, qty, price, status, deadline,
     );
 
     expect(booking.id.equals(id)).toBe(true);
+    expect(booking.customerId).toBe('customer-X');
+    expect(booking.customerName).toBe('Jane Doe');
     expect(booking.status.isPaid()).toBe(true);
     expect(booking.totalPrice.amount).toBe(300_000);
     expect(booking.domainEvents).toHaveLength(0);

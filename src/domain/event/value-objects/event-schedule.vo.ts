@@ -19,11 +19,14 @@ export class EventSchedule {
   }
 
   isOnEventDay(date: Date): boolean {
-    const d = date.toDateString();
-    return (
-      d >= this._startDate.toDateString() &&
-      d <= this._endDate.toDateString()
-    );
+    const dateOnly = this.toDateOnly(date);
+    const startOnly = this.toDateOnly(this._startDate);
+    const endOnly = this.toDateOnly(this._endDate);
+    return dateOnly >= startOnly && dateOnly <= endOnly;
+  }
+
+  private toDateOnly(date: Date): number {
+    return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
   }
 
   equals(other: EventSchedule): boolean {

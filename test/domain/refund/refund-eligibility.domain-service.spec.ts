@@ -31,7 +31,7 @@ describe('RefundEligibilityDomainService', () => {
     const booking: IBookingRef = { id: 'b-1', status: 'Paid' };
     const tickets: ITicketRef[] = [{ status: 'Active' }];
     const event: IEventRef = { status: 'Published', startDate: new Date('2026-06-10T10:00:00Z') };
-    const currentDate = new Date('2026-06-10T11:00:00Z'); // Current time is after start date
+    const currentDate = new Date('2026-06-10T11:00:00Z'); 
 
     const result = service.isEligible(booking, tickets, event, currentDate);
     expect(result).toBe(false);

@@ -58,21 +58,6 @@ export class PayBookingCommandHandler {
     }
 
     const paymentAmount = new Money(command.paymentAmount, command.currency);
-    if (!booking.status.isPendingPayment()) {
-      throw new BadRequestException(
-        'A booking can only be paid if its status is PendingPayment',
-      );
-    }
-    if (booking.paymentDeadline.isExpired(new Date())) {
-      throw new BadRequestException(
-        'A booking cannot be paid if the payment deadline has passed',
-      );
-    }
-    if (!paymentAmount.equals(booking.totalPrice)) {
-      throw new BadRequestException(
-        'The payment amount must be equal to the total booking price',
-      );
-    }
 
     const paymentResult = await this.paymentGateway.charge(
       booking.id.value,
@@ -91,7 +76,6 @@ export class PayBookingCommandHandler {
       throw new BadRequestException((err as Error).message);
     }
     await this.bookingRepository.save(booking);
-
 
     const tickets = Array.from({ length: booking.quantity.value }, () =>
       Ticket.issue({
@@ -117,4 +101,3 @@ export class PayBookingCommandHandler {
     return dto;
   }
 }
-
