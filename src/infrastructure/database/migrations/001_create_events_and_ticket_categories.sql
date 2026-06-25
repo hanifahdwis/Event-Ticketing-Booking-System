@@ -10,12 +10,15 @@ CREATE TABLE IF NOT EXISTS events (
     max_capacity  INTEGER      NOT NULL CHECK (max_capacity > 0),
     status        VARCHAR(50)  NOT NULL DEFAULT 'Draft',
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT events_status_check
+        CHECK (status IN ('Draft', 'Published', 'Cancelled', 'Completed'))
 );
 
 CREATE TABLE IF NOT EXISTS ticket_categories (
     id              UUID PRIMARY KEY,
-    event_id        UUID         NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    event_id        UUID         NOT NULL REFERENCES events(id),
     name            VARCHAR(100) NOT NULL,
     price_amount    NUMERIC(15,2) NOT NULL CHECK (price_amount >= 0),
     price_currency  VARCHAR(10)  NOT NULL DEFAULT 'IDR',
